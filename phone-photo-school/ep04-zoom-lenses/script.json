@@ -1,0 +1,44 @@
+{
+  "series": "Phone Photo School",
+  "episode": 4,
+  "title": "Lesson 04: The Zoom Lenses",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 1.5,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Galaxy Ultra rear cameras: ultra-wide (0.6x), wide (1x), 3x and 5x telephoto; tap the zoom chips to switch"
+  ],
+  "lines": [
+    {
+      "text": "Your phone has four cameras. Use them!",
+      "caps": "FOUR *CAMERAS | *USE THEM"
+    },
+    {
+      "text": "Lesson four: the zoom lenses.",
+      "caps": "LESSON *FOUR | ZOOM *LENSES"
+    },
+    {
+      "text": "Point six for huge landscapes,",
+      "caps": "0.6 FOR HUGE *LANDSCAPES"
+    },
+    {
+      "text": "one x for everyday shots,",
+      "caps": "1X FOR *EVERYDAY"
+    },
+    {
+      "text": "three x for flattering portraits,",
+      "caps": "3X FOR *PORTRAITS"
+    },
+    {
+      "text": "and five x to grab details far away.",
+      "caps": "AND *5X | DETAILS FAR *AWAY"
+    },
+    {
+      "text": "Follow for lesson five!",
+      "caps": "*FOLLOW | FOR LESSON *FIVE"
+    }
+  ]
+}

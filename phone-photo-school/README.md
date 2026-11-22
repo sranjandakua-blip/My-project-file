@@ -4,7 +4,7 @@ An Instagram series that teaches phone photography step by step, from the basics
 Each post is a **15-second 9:16 flat-2D animated reel** with an AI voiceover, word-synced captions, sound effects and a quiet music bed.
 Everything is generated in code and costs nothing. No AI images, and no paid APIs.
 
-Sample: [`ep01-grid/renders/ep01-grid.mp4`](ep01-grid/renders/ep01-grid.mp4), *Lesson 01: The Grid*.
+Finished: Lessons 01–05 (`epNN-*/renders/*.mp4`, each with a cover JPG). Instagram captions and hashtags are in [POSTS.md](POSTS.md).
 
 ## Format of every episode (keep it consistent)
 | beat | time | what |
@@ -21,9 +21,9 @@ Script: **~38–42 words** (≈15 s at voice speed 1.08), one line per cut, writ
 ## Make the next episode
 ```bash
 bash new_episode.sh ep02-tap-to-focus      # copies the engine + kit from ep01
-# edit ep02-tap-to-focus/script.json  (lines + caps: "|" splits captions, "*" marks the one yellow word)
-# edit ep02-tap-to-focus/src/shots.js (one shot per line; set LESSON = 2)
-bash build.sh ep02-tap-to-focus            # voice → timing → mix → review sheet → MP4
+# edit ep06-golden-hour/script.json  (lines + caps: "|" splits captions, "*" marks the one yellow word)
+# edit ep06-golden-hour/src/shots.js (one shot per line; set LESSON = 6)
+bash build.sh ep06-golden-hour            # voice → timing → mix → review sheet → MP4
 ```
 First time on a new machine: `python3 -m venv ~/.faceless-shorts/venv && ~/.faceless-shorts/venv/bin/pip install numpy scipy kokoro-onnx faster-whisper`
 (the Kokoro voice model, about 340 MB, downloads automatically). You also need Node 22+, ffmpeg and Chrome (set `CHROME=/path/to/chrome`).
@@ -31,7 +31,7 @@ First time on a new machine: `python3 -m venv ~/.faceless-shorts/venv && ~/.face
 **Voice:** `af_heart` (warm US female). Other options: `am_michael` (steady male), `bm_george` (UK documentary), `af_bella` (bright).
 Change `"voice"` in script.json. To use your own voice instead, record it and run `scripts/words.py <ep> --audio my_take.m4a`.
 
-**Kit** (`src/core/kit.js`): `studio` background · `phone` + `cameraApp` (viewfinder, zoom chips, modes, shutter) · `settings`
+**Kit** (`src/core/kit.js`, the same in every episode): `finder` big viewfinder · `lessonCard` · `endCard` · `focusRing` · `sunSlider` · `phoneBack` + `lens` · `finger` · `cloth` · `shirt` · `leadArrows` · `scene` options (zoom, blur, bright, haze, flower, person, balloon, road) · `studio` background · `phone` + `cameraApp` (viewfinder, zoom chips, modes, shutter) · `settings`
 screen with `toggle` · `scene` landscape + `tree` subject · `grid` · `hotspot` · `tap` ripple · `redX` · `check` · `pill` · `print`
 (photo print) · `flash` · `aperture` (series motif) · `seriesBadge`. Add new components there in the same flat look:
 teal = camera UI, yellow = the one key thing, red = wrong, green = right.
@@ -40,10 +40,10 @@ teal = camera UI, yellow = the one key thing, red = wrong, green = right.
 
 ## Suggested lesson roadmap
 1. The Grid (rule of thirds) ✅
-2. Tap to focus + brightness slider
-3. Clean your lens (seriously)
-4. Zoom lenses: .6 / 1x / 3x / 5x, when to use each
-5. Leading lines
+2. Tap to focus + brightness slider ✅
+3. Clean your lens (seriously) ✅
+4. Zoom lenses: .6 / 1x / 3x / 5x, when to use each ✅
+5. Leading lines ✅
 6. Shoot in the golden hour
 7. Portrait mode and background blur
 8. Night mode: hold still

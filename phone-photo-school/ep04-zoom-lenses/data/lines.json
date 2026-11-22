@@ -1,0 +1,49 @@
+{
+ "duration": 15.924,
+ "voice": "af_heart",
+ "speed": 1.08,
+ "lines": [
+  {
+   "i": 0,
+   "text": "Your phone has four cameras. Use them!",
+   "start": 0.35,
+   "end": 2.432
+  },
+  {
+   "i": 1,
+   "text": "Lesson four: the zoom lenses.",
+   "start": 2.652,
+   "end": 4.424
+  },
+  {
+   "i": 2,
+   "text": "Point six for huge landscapes,",
+   "start": 4.644,
+   "end": 6.474
+  },
+  {
+   "i": 3,
+   "text": "one x for everyday shots,",
+   "start": 6.794,
+   "end": 8.284
+  },
+  {
+   "i": 4,
+   "text": "three x for flattering portraits,",
+   "start": 8.634,
+   "end": 10.094
+  },
+  {
+   "i": 5,
+   "text": "and five x to grab details far away.",
+   "start": 10.154,
+   "end": 12.694
+  },
+  {
+   "i": 6,
+   "text": "Follow for lesson five!",
+   "start": 12.914,
+   "end": 14.204
+  }
+ ]
+}

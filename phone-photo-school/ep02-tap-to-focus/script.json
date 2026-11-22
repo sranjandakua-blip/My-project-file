@@ -1,0 +1,44 @@
+{
+  "series": "Phone Photo School",
+  "episode": 2,
+  "title": "Lesson 02: Tap to Focus",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 1.5,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Phone camera settings: tap the subject to focus; a brightness (sun) slider appears next to the focus ring (One UI)"
+  ],
+  "lines": [
+    {
+      "text": "Blurry photos? Your phone guessed wrong.",
+      "caps": "BLURRY *PHOTOS? | IT GUESSED *WRONG"
+    },
+    {
+      "text": "Lesson two: tap to focus.",
+      "caps": "LESSON *TWO | TAP TO *FOCUS"
+    },
+    {
+      "text": "Tap your subject on the screen, and it snaps sharp.",
+      "caps": "TAP YOUR *SUBJECT | IT SNAPS *SHARP"
+    },
+    {
+      "text": "See that little sun? Slide it down",
+      "caps": "SEE THE *SUN? | SLIDE IT *DOWN"
+    },
+    {
+      "text": "to save bright skies,",
+      "caps": "SAVE BRIGHT *SKIES"
+    },
+    {
+      "text": "or up to brighten shadows.",
+      "caps": "OR *UP | BRIGHTEN *SHADOWS"
+    },
+    {
+      "text": "Follow for lesson three!",
+      "caps": "*FOLLOW | FOR LESSON *THREE"
+    }
+  ]
+}

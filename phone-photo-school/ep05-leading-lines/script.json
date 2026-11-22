@@ -1,0 +1,44 @@
+{
+  "series": "Phone Photo School",
+  "episode": 5,
+  "title": "Lesson 05: Leading Lines",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 1.5,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Leading lines: a standard composition technique where lines in the scene guide the eye to the subject"
+  ],
+  "lines": [
+    {
+      "text": "Want photos that pull people in?",
+      "caps": "PHOTOS THAT *PULL | PEOPLE *IN?"
+    },
+    {
+      "text": "Lesson five: leading lines.",
+      "caps": "LESSON *FIVE | LEADING *LINES"
+    },
+    {
+      "text": "Roads, rails, fences and rivers all draw the eye.",
+      "caps": "ROADS, *RAILS, | FENCES, *RIVERS | DRAW THE *EYE"
+    },
+    {
+      "text": "Line them up so they run",
+      "caps": "LINE THEM *UP"
+    },
+    {
+      "text": "straight toward your subject,",
+      "caps": "TOWARD YOUR *SUBJECT"
+    },
+    {
+      "text": "not off the edge.",
+      "caps": "NOT OFF THE *EDGE"
+    },
+    {
+      "text": "Follow for lesson six!",
+      "caps": "*FOLLOW | FOR LESSON *SIX"
+    }
+  ]
+}

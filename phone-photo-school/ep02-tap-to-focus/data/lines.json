@@ -1,0 +1,49 @@
+{
+ "duration": 15.415,
+ "voice": "af_heart",
+ "speed": 1.08,
+ "lines": [
+  {
+   "i": 0,
+   "text": "Blurry photos? Your phone guessed wrong.",
+   "start": 0.35,
+   "end": 2.414
+  },
+  {
+   "i": 1,
+   "text": "Lesson two: tap to focus.",
+   "start": 2.634,
+   "end": 4.366
+  },
+  {
+   "i": 2,
+   "text": "Tap your subject on the screen, and it snaps sharp.",
+   "start": 4.586,
+   "end": 7.173
+  },
+  {
+   "i": 3,
+   "text": "See that little sun? Slide it down",
+   "start": 7.393,
+   "end": 9.713
+  },
+  {
+   "i": 4,
+   "text": "to save bright skies,",
+   "start": 9.793,
+   "end": 10.573
+  },
+  {
+   "i": 5,
+   "text": "or up to brighten shadows.",
+   "start": 10.763,
+   "end": 12.203
+  },
+  {
+   "i": 6,
+   "text": "Follow for lesson three!",
+   "start": 12.423,
+   "end": 13.695
+  }
+ ]
+}

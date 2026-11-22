@@ -1,0 +1,44 @@
+{
+  "series": "Phone Photo School",
+  "episode": 3,
+  "title": "Lesson 03: Clean Your Lens",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 1.5,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Samsung and Apple support: clean camera lenses with a soft, lint-free microfiber cloth"
+  ],
+  "lines": [
+    {
+      "text": "Photos looking hazy and soft?",
+      "caps": "HAZY AND *SOFT?"
+    },
+    {
+      "text": "Lesson three: clean your lens.",
+      "caps": "LESSON *THREE | CLEAN YOUR *LENS"
+    },
+    {
+      "text": "Your fingers leave grease on it every day,",
+      "caps": "YOUR FINGERS LEAVE *GREASE | EVERY *DAY"
+    },
+    {
+      "text": "and that smudge makes lights glow and details blur.",
+      "caps": "THAT *SMUDGE | MAKES LIGHTS *GLOW | DETAILS *BLUR"
+    },
+    {
+      "text": "Wipe it with a soft cloth,",
+      "caps": "WIPE IT WITH A *SOFT CLOTH"
+    },
+    {
+      "text": "not your shirt.",
+      "caps": "NOT YOUR *SHIRT"
+    },
+    {
+      "text": "Crisp and clear. Follow for lesson four!",
+      "caps": "CRISP AND *CLEAR | *FOLLOW | FOR LESSON *FOUR"
+    }
+  ]
+}

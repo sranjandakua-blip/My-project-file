@@ -1,0 +1,49 @@
+{
+ "duration": 15.602,
+ "voice": "af_heart",
+ "speed": 1.08,
+ "lines": [
+  {
+   "i": 0,
+   "text": "Photos looking hazy and soft?",
+   "start": 0.35,
+   "end": 1.936
+  },
+  {
+   "i": 1,
+   "text": "Lesson three: clean your lens.",
+   "start": 2.156,
+   "end": 3.772
+  },
+  {
+   "i": 2,
+   "text": "Your fingers leave grease on it every day,",
+   "start": 3.992,
+   "end": 5.812
+  },
+  {
+   "i": 3,
+   "text": "and that smudge makes lights glow and details blur.",
+   "start": 6.212,
+   "end": 9.029
+  },
+  {
+   "i": 4,
+   "text": "Wipe it with a soft cloth,",
+   "start": 9.249,
+   "end": 10.419
+  },
+  {
+   "i": 5,
+   "text": "not your shirt.",
+   "start": 10.659,
+   "end": 11.386
+  },
+  {
+   "i": 6,
+   "text": "Crisp and clear. Follow for lesson four!",
+   "start": 11.606,
+   "end": 13.882
+  }
+ ]
+}
