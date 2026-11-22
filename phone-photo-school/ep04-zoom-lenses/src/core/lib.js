@@ -12,7 +12,7 @@ export const C = {
   // the photo scene (flat, two tones per object)
   sky: '#8FD3F4', skyLow: '#BDE7F8', sun: '#FFD66B', mtnFar: '#7C8EDB', mtnNear: '#5468B8',
   ground: '#47B072', groundDark: '#358F5A', trunk: '#7A4B2E', leaf: '#2FAE68', leafDark: '#238A52',
-  phone: '#0E1015', phoneEdge: '#3A4150', phoneEdgeHi: '#5A6478',
+  phone: '#0E1015', phoneEdge: '#2A3854', phoneEdgeHi: '#4C6288',
 };
 
 // ---------- math ----------

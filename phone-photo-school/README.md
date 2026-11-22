@@ -31,6 +31,8 @@ First time on a new machine: `python3 -m venv ~/.faceless-shorts/venv && ~/.face
 **Voice:** `af_heart` (warm US female). Other options: `am_michael` (steady male), `bm_george` (UK documentary), `af_bella` (bright).
 Change `"voice"` in script.json. To use your own voice instead, record it and run `scripts/words.py <ep> --audio my_take.m4a`.
 
+**The creator's phone:** `phoneBack()` is drawn after the S26 Ultra (navy, raised 3-lens pill island, 5x lens + flash + sensor column, no logo); `{ inCase: true }` draws the light-blue case with the camera slider. Front edges use the navy frame colours in `lib.js`.
+
 **Kit** (`src/core/kit.js`, the same in every episode): `finder` big viewfinder · `lessonCard` · `endCard` · `focusRing` · `sunSlider` · `phoneBack` + `lens` · `finger` · `cloth` · `shirt` · `leadArrows` · `scene` options (zoom, blur, bright, haze, flower, person, balloon, road) · `studio` background · `phone` + `cameraApp` (viewfinder, zoom chips, modes, shutter) · `settings`
 screen with `toggle` · `scene` landscape + `tree` subject · `grid` · `hotspot` · `tap` ripple · `redX` · `check` · `pill` · `print`
 (photo print) · `flash` · `aperture` (series motif) · `seriesBadge`. Add new components there in the same flat look:

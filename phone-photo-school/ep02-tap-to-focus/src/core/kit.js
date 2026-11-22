@@ -401,20 +401,40 @@ export function sunSlider(x, y, len, val, a = 1, r = 34) {
 }
 
 // ---------- the lens episodes ----------
-/** the back of the phone with the quad camera: ultra-wide, wide, 3x (left column) + 5x (right). smudge 0..1 on the top lens */
-export function phoneBack(x, y, s, rot, { smudge = 0, glow = [] } = {}) {
+/** the creator's phone (S26 Ultra look, navy, no logo): a raised pill island with three big lenses (ultra-wide, wide, 3x),
+ *  and a second column with the 5x lens, flash and a small sensor. smudge 0..1 on the top lens · glow[i] per lens.
+ *  inCase: the light-blue case with a camera slider (the creator's everyday case) */
+export function phoneBack(x, y, s, rot, { smudge = 0, glow = [], inCase = false } = {}) {
   const w = PHONE.w * s, h = PHONE.h * s;
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
   ell(0, h * 0.53, w * 0.42, h * 0.025, 'rgba(0,0,0,0.35)');
-  ctx.fillStyle = C.phoneEdge; rr(-w / 2 - 6 * s, -h / 2 - 6 * s, w + 12 * s, h + 12 * s, 40 * s); ctx.fill();
-  ctx.fillStyle = '#2C3342'; rr(-w / 2, -h / 2, w, h, 34 * s); ctx.fill();
-  ctx.fillStyle = '#323A4B'; rr(-w / 2, -h / 2, w * 0.5, h, 34 * s); ctx.fill();
-  LENSES(s).forEach((L, i) => lens(L[0], L[1], 58 * s, i === 0 ? smudge : 0, glow[i] ?? 0));
-  circle(LENSES(s)[3][0], -h / 2 + 410 * s, 14 * s, '#E8E2C8');                         // flash
+  if (inCase) {
+    ctx.fillStyle = '#7F95B8'; rr(-w / 2 - 14 * s, -h / 2 - 14 * s, w + 28 * s, h + 28 * s, 56 * s); ctx.fill();
+    ctx.fillStyle = '#93A9CC'; rr(-w / 2 - 6 * s, -h / 2 - 6 * s, w + 12 * s, h + 12 * s, 50 * s); ctx.fill();
+  } else {
+    ctx.fillStyle = '#1A2335'; rr(-w / 2 - 6 * s, -h / 2 - 6 * s, w + 12 * s, h + 12 * s, 44 * s); ctx.fill();   // navy frame
+    ctx.fillStyle = '#2C3C58'; rr(-w / 2, -h / 2, w, h, 40 * s); ctx.fill();
+    ctx.save(); rr(-w / 2, -h / 2, w, h, 40 * s); ctx.clip();                                                       // soft light sweep
+    ctx.fillStyle = '#3A4F73'; ctx.beginPath(); ctx.moveTo(w * 0.1, -h / 2); ctx.lineTo(w / 2, -h / 2); ctx.lineTo(w / 2, h * 0.25); ctx.lineTo(-w * 0.05, h / 2); ctx.lineTo(-w / 2, h / 2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#4A6189'; ctx.beginPath(); ctx.moveTo(w * 0.32, -h / 2); ctx.lineTo(w / 2, -h / 2); ctx.lineTo(w / 2, -h * 0.1); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  const L = LENSES(s), top = L[0][1], bot = L[2][1], cx = L[0][0], ir = 84 * s;
+  ctx.fillStyle = inCase ? '#6E84A8' : '#1F2B42'; rr(cx - ir, top - ir, ir * 2, bot - top + ir * 2, ir); ctx.fill();          // raised island
+  ctx.strokeStyle = inCase ? '#A9BCDB' : '#4C6288'; ctx.lineWidth = 3 * s; ctx.stroke();
+  [0, 1, 2].forEach((i) => lens(L[i][0], L[i][1], 64 * s, i === 0 ? smudge : 0, glow[i] ?? 0));
+  lens(L[3][0], L[3][1], 34 * s, 0, glow[3] ?? 0);                                                                    // 5x
+  circle(L[3][0], L[3][1] + 62 * s, 13 * s, '#55493A'); circle(L[3][0], L[3][1] + 62 * s, 10 * s, '#F1E2A8');       // flash
+  circle(L[3][0], L[3][1] + 120 * s, 27 * s, '#7C869A'); circle(L[3][0], L[3][1] + 120 * s, 21 * s, '#0E1218');      // sensor
+  circle(L[3][0] - 6 * s, L[3][1] + 114 * s, 4 * s, 'rgba(255,255,255,0.7)');
+  if (inCase) {                                                                                                       // camera slider (open)
+    ctx.fillStyle = '#93A9CC'; rr(L[3][0] + 70 * s, top - ir, 160 * s, bot - top + ir * 1.2, 26 * s); ctx.fill();
+    ctx.fillStyle = '#7F95B8'; rr(L[3][0] + 140 * s, top + 40 * s, 18 * s, 110 * s, 9 * s); ctx.fill();
+  }
   ctx.restore();
 }
 /** lens centres (phone-local) for phoneBack at scale s: [ultra-wide, wide, 3x, 5x] */
-export const LENSES = (s) => [[-150 * s, -400 * s], [-150 * s, -265 * s], [-150 * s, -130 * s], [-20 * s, -330 * s]];
+export const LENSES = (s) => [[-118 * s, -390 * s], [-118 * s, -250 * s], [-118 * s, -110 * s], [5 * s, -395 * s]];
 /** one camera lens, r = outer radius. smudge 0..1 = greasy fingerprint, glow 0..1 = highlight ring */
 export function lens(x, y, r, smudge = 0, glow = 0) {
   if (glow > 0) { ctx.save(); ctx.globalAlpha = glow; circle(x, y, r * 1.25, C.yellow); ctx.restore(); }
@@ -432,9 +452,9 @@ export function fingerprint(x, y, r, a) {
 /** a fingertip (from below), tip at (x, y), s = width */
 export function finger(x, y, s, rot = 0) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
-  ctx.fillStyle = '#D49C7E'; rr(-s / 2 - 4, -4, s + 8, s * 4, s / 2); ctx.fill();
-  ctx.fillStyle = '#E8B89A'; rr(-s / 2, 0, s, s * 4, s / 2); ctx.fill();
-  ctx.fillStyle = '#F4D3C1'; rr(-s * 0.3, s * 0.12, s * 0.6, s * 0.55, s * 0.25); ctx.fill();
+  ctx.fillStyle = '#7A4E35'; rr(-s / 2 - 4, -4, s + 8, s * 4, s / 2); ctx.fill();
+  ctx.fillStyle = '#9C6A4C'; rr(-s / 2, 0, s, s * 4, s / 2); ctx.fill();
+  ctx.fillStyle = '#D9B8A3'; rr(-s * 0.3, s * 0.12, s * 0.6, s * 0.55, s * 0.25); ctx.fill();
   ctx.restore();
 }
 /** a microfiber cloth, centre (x, y), s scale */
@@ -476,7 +496,7 @@ export function avatar(x, y, r, sc = 1) {
   ctx.fillStyle = '#CFE3EC'; ctx.fillRect(-170, -170, 340, 340);                         // pale wall
   ctx.fillStyle = '#C8742E'; ctx.fillRect(72, -170, 100, 340);                            // warm wood door
   ctx.fillStyle = '#A85E22'; ctx.fillRect(96, -170, 7, 340);
-  const skin = '#C98B67', skinD = '#A86F50', jacket = '#2A2326', jacketHi = '#3B3135';
+  const skin = '#9C6A4C', skinD = '#7A4E35', jacket = '#2A2326', jacketHi = '#3B3135';
   ctx.fillStyle = jacket; ctx.beginPath(); ctx.moveTo(-170, 170); ctx.lineTo(-155, 70); ctx.quadraticCurveTo(-120, 30, -55, 26);
   ctx.lineTo(55, 26); ctx.quadraticCurveTo(120, 30, 155, 70); ctx.lineTo(170, 170); ctx.closePath(); ctx.fill();
   ctx.strokeStyle = jacketHi; ctx.lineWidth = 6; ctx.lineCap = 'round';
