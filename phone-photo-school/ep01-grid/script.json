@@ -1,0 +1,45 @@
+{
+  "series": "Phone Photo School",
+  "episode": 1,
+  "title": "Lesson 01: The Grid",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 1.5,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Samsung Galaxy camera app: Camera settings > Grid lines (One UI)",
+    "Rule of thirds: a standard composition guideline (place the subject on a third line or intersection)"
+  ],
+  "lines": [
+    {
+      "text": "Want better photos from your phone?",
+      "caps": "WANT BETTER *PHOTOS? | FROM YOUR *PHONE"
+    },
+    {
+      "text": "Lesson one: the grid.",
+      "caps": "LESSON *ONE | THE *GRID"
+    },
+    {
+      "text": "Open camera settings, and turn on grid lines.",
+      "caps": "CAMERA *SETTINGS | TURN ON *GRID LINES"
+    },
+    {
+      "text": "Now put your subject where the lines cross,",
+      "caps": "PUT YOUR *SUBJECT | WHERE LINES *CROSS"
+    },
+    {
+      "text": "not dead center.",
+      "caps": "NOT DEAD *CENTER"
+    },
+    {
+      "text": "Your shot instantly feels balanced.",
+      "caps": "INSTANTLY *BALANCED"
+    },
+    {
+      "text": "Follow for lesson two!",
+      "caps": "*FOLLOW | FOR LESSON *TWO"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+ "duration": 14.685,
+ "voice": "af_heart",
+ "speed": 1.08,
+ "lines": [
+  {
+   "i": 0,
+   "text": "Want better photos from your phone?",
+   "start": 0.35,
+   "end": 1.964
+  },
+  {
+   "i": 1,
+   "text": "Lesson one: the grid.",
+   "start": 2.184,
+   "end": 3.453
+  },
+  {
+   "i": 2,
+   "text": "Open camera settings, and turn on grid lines.",
+   "start": 3.673,
+   "end": 6.188
+  },
+  {
+   "i": 3,
+   "text": "Now put your subject where the lines cross,",
+   "start": 6.408,
+   "end": 8.408
+  },
+  {
+   "i": 4,
+   "text": "not dead center.",
+   "start": 8.658,
+   "end": 9.55
+  },
+  {
+   "i": 5,
+   "text": "Your shot instantly feels balanced.",
+   "start": 9.77,
+   "end": 11.54
+  },
+  {
+   "i": 6,
+   "text": "Follow for lesson two!",
+   "start": 11.76,
+   "end": 12.965
+  }
+ ]
+}
