@@ -31,7 +31,7 @@ First time on a new machine: `python3 -m venv ~/.faceless-shorts/venv && ~/.face
 **Voice:** `af_heart` (warm US female). Other options: `am_michael` (steady male), `bm_george` (UK documentary), `af_bella` (bright).
 Change `"voice"` in script.json. To use your own voice instead, record it and run `scripts/words.py <ep> --audio my_take.m4a`.
 
-**Brand:** `brand/logo-mark.png` (SR monogram, shown in the series badge) and `brand/logo-full.png` (closing logo sting, last ~1.9 s, `logoSting()` in kit.js) are copied into each episode's `assets/`. Episodes use `"outro": 3.0` so the end card and the sting both fit.
+**Brand:** `brand/logo-mark.png` (SR monogram, shown in the series badge) and the same monogram as the closing logo sting (last ~1.9 s, `logoSting()` in kit.js; no name or tagline text). `brand/logo-full.png` is kept for other uses are copied into each episode's `assets/`. Episodes use `"outro": 3.0` so the end card and the sting both fit.
 
 **The creator's phone:** `phoneBack()` is drawn after the S26 Ultra (navy, raised 3-lens pill island, 5x lens + flash + sensor column, no logo); `{ inCase: true }` draws the light-blue case with the camera slider. Front edges use the navy frame colours in `lib.js`.
 

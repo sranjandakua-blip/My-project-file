@@ -558,20 +558,20 @@ export function eye(x, y, s) {
   ctx.restore();
 }
 
-/** the closing brand sting: end card fades to black, the full logo fades + settles in, a soft gold glint sweeps across */
+/** the closing brand sting: end card fades to black, the SR monogram (no text) fades + settles in, a soft gold glint sweeps across */
 export function logoSting(t) {
   const p = stingP()(t); if (p <= 0) return;
   ctx.save(); ctx.globalAlpha = p; ctx.fillStyle = '#08080A'; ctx.fillRect(-300, -300, W + 600, H + 600); ctx.restore();
-  if (!IMG.full) return;
+  if (!IMG.mark) return;
   const t0 = T.dur - STING + 0.45;                                              // logo only once the screen is fully black
-  const q = eo(seg(t, t0, t0 + 0.6)), w = lerp(820, 880, q), h = w * IMG.full.height / IMG.full.width;
+  const q = eo(seg(t, t0, t0 + 0.6)), w = lerp(500, 540, q), h = w * IMG.mark.height / IMG.mark.width;
   if (q <= 0) return;
-  ctx.save(); ctx.globalAlpha = q; ctx.drawImage(IMG.full, 540 - w / 2, 860 - h / 2, w, h); ctx.restore();
+  ctx.save(); ctx.globalAlpha = q; ctx.drawImage(IMG.mark, 540 - w / 2, 860 - h / 2, w, h); ctx.restore();
   const g = seg(t, t0 + 0.3, T.dur - 0.25);                                     // gold glint, clipped to the logo's own shape
   if (g > 0 && g < 1) {
     if (!_glint) _glint = document.createElement('canvas');
     _glint.width = Math.ceil(w); _glint.height = Math.ceil(h);
-    const gc = _glint.getContext('2d'); gc.clearRect(0, 0, w, h); gc.drawImage(IMG.full, 0, 0, w, h);
+    const gc = _glint.getContext('2d'); gc.clearRect(0, 0, w, h); gc.drawImage(IMG.mark, 0, 0, w, h);
     gc.globalCompositeOperation = 'source-atop';
     const gx = lerp(-120, w + 120, g), gr = gc.createLinearGradient(gx - 110, 0, gx + 110, 0);
     gr.addColorStop(0, 'rgba(255,200,120,0)'); gr.addColorStop(0.5, 'rgba(255,220,160,1)'); gr.addColorStop(1, 'rgba(255,200,120,0)');
