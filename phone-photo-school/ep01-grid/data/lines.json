@@ -1,5 +1,5 @@
 {
- "duration": 14.685,
+ "duration": 23.752,
  "voice": "af_heart",
  "speed": 1.08,
  "lines": [
@@ -23,27 +23,45 @@
   },
   {
    "i": 3,
-   "text": "Now put your subject where the lines cross,",
+   "text": "Two lines across, two lines down, splitting your frame into thirds.",
    "start": 6.408,
-   "end": 8.408
+   "end": 10.162
   },
   {
    "i": 4,
-   "text": "not dead center.",
-   "start": 8.658,
-   "end": 9.55
+   "text": "Now put your subject where the lines cross,",
+   "start": 10.382,
+   "end": 12.382
   },
   {
    "i": 5,
-   "text": "Your shot instantly feels balanced.",
-   "start": 9.77,
-   "end": 11.54
+   "text": "not dead center.",
+   "start": 12.632,
+   "end": 13.524
   },
   {
    "i": 6,
+   "text": "Keep your horizon on a line too, never through the middle.",
+   "start": 13.744,
+   "end": 16.452
+  },
+  {
+   "i": 7,
+   "text": "Your shot instantly feels balanced.",
+   "start": 16.672,
+   "end": 18.442
+  },
+  {
+   "i": 8,
+   "text": "Try it on your next walk, and tag me!",
+   "start": 18.662,
+   "end": 20.608
+  },
+  {
+   "i": 9,
    "text": "Follow for lesson two!",
-   "start": 11.76,
-   "end": 12.965
+   "start": 20.828,
+   "end": 22.032
   }
  ]
 }

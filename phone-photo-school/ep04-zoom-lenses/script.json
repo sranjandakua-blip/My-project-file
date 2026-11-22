@@ -21,20 +21,28 @@
       "caps": "LESSON *FOUR | ZOOM *LENSES"
     },
     {
-      "text": "Point six for huge landscapes,",
-      "caps": "0.6 FOR HUGE *LANDSCAPES"
+      "text": "Point six, the ultra wide, fits huge landscapes and small rooms.",
+      "caps": "0.6 *ULTRA-WIDE | HUGE *LANDSCAPES | SMALL *ROOMS"
     },
     {
-      "text": "one x for everyday shots,",
-      "caps": "1X FOR *EVERYDAY"
+      "text": "One x, the main camera, is your best all rounder, especially at night.",
+      "caps": "1X *MAIN CAMERA | BEST *ALL-ROUNDER | ESPECIALLY AT *NIGHT"
     },
     {
-      "text": "three x for flattering portraits,",
+      "text": "Three x is perfect for flattering portraits,",
       "caps": "3X FOR *PORTRAITS"
     },
     {
-      "text": "and five x to grab details far away.",
+      "text": "and five x grabs details far away.",
       "caps": "AND *5X | DETAILS FAR *AWAY"
+    },
+    {
+      "text": "Tap these buttons instead of pinching,",
+      "caps": "*TAP THE BUTTONS | INSTEAD OF *PINCHING"
+    },
+    {
+      "text": "because in between, it's often just cropping, and you lose quality.",
+      "caps": "IN *BETWEEN | IT'S *CROPPING | YOU LOSE *QUALITY"
     },
     {
       "text": "Follow for lesson five!",

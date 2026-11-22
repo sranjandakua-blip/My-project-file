@@ -25,6 +25,10 @@
       "caps": "ROADS, *RAILS, | FENCES, *RIVERS | DRAW THE *EYE"
     },
     {
+      "text": "Even shadows, staircases and shorelines work.",
+      "caps": "EVEN *SHADOWS | *STAIRCASES | *SHORELINES"
+    },
+    {
       "text": "Line them up so they run",
       "caps": "LINE THEM *UP"
     },
@@ -35,6 +39,14 @@
     {
       "text": "not off the edge.",
       "caps": "NOT OFF THE *EDGE"
+    },
+    {
+      "text": "That way, the eye follows the line and lands right where you want.",
+      "caps": "THE EYE *FOLLOWS | AND *LANDS | WHERE YOU *WANT"
+    },
+    {
+      "text": "Get low and shoot wide with point six, and the lines stretch out even more.",
+      "caps": "GET *LOW | SHOOT *WIDE | LINES *STRETCH"
     },
     {
       "text": "Follow for lesson six!",

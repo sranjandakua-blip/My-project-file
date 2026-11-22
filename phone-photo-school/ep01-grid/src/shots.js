@@ -1,31 +1,11 @@
-// PHONE PHOTO SCHOOL · LESSON 01: THE GRID: the shot list (the only file that changes per video, with script.json).
-// A shot: { id, at, cam: [cx, cy], zoom, note, draw(lt, d, t) } · lt = time in shot, d = shot length, t = film time.
-// Cut = L(i) - 0.08 (picture changes just before its line). Key moments land on words with Wd('word', line).
+// PHONE PHOTO SCHOOL · LESSON 01: THE GRID (25 s): the shot list.
 // Keep key action between y 200 and 1250: the caption lives at y 1250-1550.
-import { ctx, C, W, H, clamp, lerp, seg, eo, eio, eob, rr, bigText } from './core/lib.js';
-import { L, Le, Wd, T } from './core/timing.js';
+import { ctx, C, W, H, clamp, lerp, seg, eo, eio, eob, rr, line } from './core/lib.js';
+import { L, Wd, T } from './core/timing.js';
 import * as K from './core/kit.js';
 
-const LESSON = 1;
-const FRAME = { x: 100, y: 300, w: 880, h: 910 };          // the big viewfinder in the composition shots
-
-/** big viewfinder: scene + grid + focus brackets, in FRAME */
-function bigFinder(t, subj, gridP, { brackets = true } = {}) {
-  const { x, y, w, h } = FRAME;
-  ctx.fillStyle = C.ink; rr(x - 14, y - 14, w + 28, h + 28, 46); ctx.fill();
-  ctx.save(); rr(x, y, w, h, 34); ctx.clip(); ctx.translate(x, y);
-  K.scene(w, h, { subj, t });
-  K.grid(0, 0, w, h, gridP, 6, 'rgba(255,255,255,0.9)');
-  ctx.restore();
-  if (brackets) {                                           // focus brackets follow the subject
-    const bx = x + subj * w, by = y + h * 0.56, s = 120;
-    ctx.strokeStyle = C.yellow; ctx.lineWidth = 8; ctx.lineCap = 'round';
-    for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
-      ctx.beginPath(); ctx.moveTo(bx + sx * s, by + sy * s - sy * 40); ctx.lineTo(bx + sx * s, by + sy * s); ctx.lineTo(bx + sx * s - sx * 40, by + sy * s); ctx.stroke();
-    }
-  }
-}
-const third = (i, j) => [FRAME.x + (FRAME.w * i) / 3, FRAME.y + (FRAME.h * j) / 3];
+const LESSON = 1, F = K.FRAME;
+const third = (i, j) => [F.x + (F.w * i) / 3, F.y + (F.h * j) / 3];
 
 export function buildShots() {
   const S = [], CUES = [];
@@ -33,44 +13,35 @@ export function buildShots() {
   const cue = (t, type, o = {}) => CUES.push({ t: +t.toFixed(3), type, ...o });
   const cut = (i) => (i === 0 ? 0 : L(i) - 0.08);
 
-  // ── 1 · HOOK: phone rises into frame, camera app open, shutter on "photos" ─────────────
+  // ── 0 · HOOK: phone rises into frame, camera app open, shutter on "photos" ──
   {
     const st = cut(0), snap = Wd('photos', 0) - st;
-    add({ id: 'S01', at: st, cam: [540, 800], zoom: 0.06, note: 'phone rises, camera app, shutter + flash on "photos"',
+    add({ id: 'S01', at: st, cam: [540, 800], zoom: 0.06, note: 'phone rises, shutter + flash on "photos"',
       draw(lt, d, t) {
         K.studio(t);
-        const rise = eob(seg(lt, 0, 0.6));
-        const press = lt > snap && lt < snap + 0.25 ? 1 : 0;
+        const rise = eob(seg(lt, 0, 0.6)), press = lt > snap && lt < snap + 0.25 ? 1 : 0;
         K.phone(540, lerp(1900, 800, rise), 0.92, lerp(-0.2, -0.04, rise), (w, h) => K.cameraApp(w, h, { t, subj: 0.5, press }));
         K.flash(lt > snap ? 0.7 * (1 - seg(lt, snap, snap + 0.25)) : 0);
       } });
-    cue(st + 0.05, 'whoosh'); cue(st + 0.15, 'pop', { gain: 0.5 }); cue(st + snap, 'shutter');
+    cue(st + 0.05, 'whoosh'); cue(st + snap, 'shutter');
   }
 
-  // ── 2 · LESSON CARD: "01" slams in, grid sweeps across, THE GRID pill on "grid" ─────
+  // ── 1 · LESSON CARD ──
   {
-    const st = cut(1), one = Wd('one', 1) - st, g = Wd('grid', 1) - st;
-    add({ id: 'S02', at: st, cam: [540, 700], zoom: 0.1, note: 'lesson card, 01 on "one", THE GRID on "grid"',
-      draw(lt, d, t) {
-        K.studio(t, C.panel2);
-        K.grid(0, 0, W, H, seg(lt, 0, 0.9), 6, C.teal);
-        ctx.font = '900 64px Inter'; ctx.letterSpacing = '14px'; ctx.textAlign = 'center'; ctx.fillStyle = C.mute;
-        ctx.globalAlpha = seg(lt, 0, 0.25); ctx.fillText('LESSON', 552, 430); ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
-        if (lt > one - 0.05) bigText('01', 540, 700, 400, C.white, -0.04, lerp(1.8, 1, eob(seg(lt, one - 0.05, one + 0.2))));
-        K.pill('THE GRID', 540, 1030, 84, C.yellow, C.ink, eob(seg(lt, g - 0.05, g + 0.25)));
-      } });
-    cue(st, 'whoosh'); cue(st + one - 0.02, 'slam', { gain: 0.8 }); cue(st + g, 'pop');
+    const st = cut(1);
+    add({ id: 'S02', at: st, cam: [540, 700], zoom: 0.1, note: 'lesson card 01, THE GRID',
+      draw: (lt, d, t) => K.lessonCard(lt, t, LESSON, 'THE GRID', Wd('one', 1) - st, Wd('grid', 1) - st) });
+    cue(st, 'whoosh'); cue(Wd('one', 1) - 0.02, 'slam', { gain: 0.8 }); cue(Wd('grid', 1), 'pop');
   }
 
-  // ── 3 · HOW: tap the gear, settings slide in, Grid lines toggles ON ────────────────────
+  // ── 2 · HOW: tap the gear, settings slide in, Grid lines toggles ON ──
   {
     const st = cut(2), sett = Wd('settings', 2) - st, gr = Wd('grid', 2) - st, tapT = sett - 0.3;
-    // phone at s 1.02 centred (540, 720): screen-local gear position → world, for the tap ripple
     const s = 0.92, sw = (K.PHONE.w - 28) * s, k = sw / 472;
     const scrX = 540 - (K.PHONE.w * s) / 2 + 14 * s, scrY = 800 - (K.PHONE.h * s) / 2 + 14 * s;
     const gearW = [scrX + 48 * k, scrY + ((K.PHONE.h - 28) * s * 0.1) / 2 + 6 * k];
     const rowW = [scrX + sw - 90 * k, scrY + 190 * k + 2 * 112 * k];
-    add({ id: 'S03', at: st, cam: [540, 800], zoom: 0.08, note: 'tap gear, settings slide in on "settings", Grid lines ON on "grid"',
+    add({ id: 'S03', at: st, cam: [540, 800], zoom: 0.08, note: 'tap gear, settings on "settings", Grid lines ON on "grid"',
       draw(lt, d, t) {
         K.studio(t);
         K.phone(540, 800, s, 0, (w, h) => {
@@ -84,14 +55,36 @@ export function buildShots() {
     cue(st, 'whoosh'); cue(st + tapT, 'tap'); cue(st + sett, 'slide', { dur: 0.35, gain: 0.7 }); cue(st + gr - 0.05, 'tap'); cue(st + gr + 0.05, 'pop');
   }
 
-  // ── 4 · RULE: big viewfinder with the grid, the tree slides to the right third, power points glow on "cross" ──
+  // ── 3 · THIRDS: lines draw across on "across", down on "down", 1/3 labels on "thirds" ──
   {
-    const st = cut(3), subj = Wd('subject', 3) - st, cross = Wd('cross', 3) - st;
-    add({ id: 'S04', at: st, cam: [540, 760], zoom: 0.05, note: 'grid on, tree moves centre → right third, hotspots on "cross"',
+    const st = cut(3), ac = Wd('across', 3) - st, dn = Wd('down', 3) - st, th = Wd('thirds', 3) - st;
+    add({ id: 'S04', at: st, cam: [540, 750], zoom: 0.05, note: 'horizontal lines on "across", vertical on "down", 1/3 labels on "thirds"',
+      draw(lt, d, t) {
+        K.studio(t);
+        K.finder(t, { subj: 0.5 }, { over: (w, h) => {
+          ctx.lineCap = 'round';
+          for (const [col, lw] of [[C.ink, 16], [C.white, 9]]) {
+            ctx.strokeStyle = col; ctx.lineWidth = lw;
+            for (let i = 1; i <= 2; i++) {
+              const a = eo(seg(lt, ac - 0.1 + i * 0.12, ac + 0.4 + i * 0.12)), b = eo(seg(lt, dn - 0.1 + i * 0.12, dn + 0.4 + i * 0.12));
+              if (a > 0) { ctx.beginPath(); ctx.moveTo(0, (h * i) / 3); ctx.lineTo(w * a, (h * i) / 3); ctx.stroke(); }
+              if (b > 0) { ctx.beginPath(); ctx.moveTo((w * i) / 3, 0); ctx.lineTo((w * i) / 3, h * b); ctx.stroke(); }
+            }
+          }
+          for (let i = 0; i < 3; i++) K.pill('1/3', (w * (i + 0.5)) / 3, 70, 42, C.yellow, C.ink, eob(seg(lt, th + i * 0.1, th + i * 0.1 + 0.25)));
+        } });
+      } });
+    cue(st, 'whoosh'); cue(st + ac, 'zip', { gain: 0.6 }); cue(st + dn, 'zip', { gain: 0.6 }); [0, 1, 2].forEach((i) => cue(st + th + i * 0.1, 'pop', { gain: 0.5 }));
+  }
+
+  // ── 4 · RULE: tree slides to the right third, power points glow on "cross" ──
+  {
+    const st = cut(4), subj = Wd('subject', 4) - st, cross = Wd('cross', 4) - st;
+    add({ id: 'S05', at: st, cam: [540, 760], zoom: 0.05, note: 'tree centre → right third, hotspots on "cross"',
       draw(lt, d, t) {
         K.studio(t);
         const u = lerp(0.5, 2 / 3, eio(seg(lt, subj - 0.1, cross)));
-        bigFinder(t, u, 1);
+        K.finder(t, { subj: u }, { grid: 1, brackets: [u, 0.56] });
         [[1, 1], [2, 1], [1, 2], [2, 2]].forEach(([i, j], n) => {
           const [hx, hy] = third(i, j); K.hotspot(hx, hy, i === 2 ? 1.25 : 0.8, seg(lt, cross - 0.1 + n * 0.06, cross + 0.15 + n * 0.06), t);
         });
@@ -99,46 +92,75 @@ export function buildShots() {
     cue(st, 'whoosh'); cue(st + subj, 'slide', { dur: cross - subj, gain: 0.8 }); cue(st + cross, 'sparkle', { dur: 0.6 });
   }
 
-  // ── 5 · MYTH: centred version, red X on "center" ───────────────────────────────────────
+  // ── 5 · MYTH: centred version, red X on "center" ──
   {
-    const st = cut(4), x = Wd('center', 4) - st - 0.05;
-    add({ id: 'S05', at: st, cam: [540, 760], zoom: 0.04, note: 'tree dead centre, red X slams on "center"',
+    const st = cut(5), x = Wd('center', 5) - st - 0.05;
+    add({ id: 'S06', at: st, cam: [540, 760], zoom: 0.04, note: 'tree dead centre, red X on "center"',
       draw(lt, d, t) {
         K.studio(t);
-        bigFinder(t, 0.5, 1, { brackets: false });
+        K.finder(t, { subj: 0.5 }, { grid: 1 });
         ctx.save(); ctx.globalAlpha = 0.6; ctx.strokeStyle = C.red; ctx.lineWidth = 6; ctx.setLineDash([22, 16]);
-        ctx.beginPath(); ctx.moveTo(540, FRAME.y + 30); ctx.lineTo(540, FRAME.y + FRAME.h - 30); ctx.stroke(); ctx.restore();
+        ctx.beginPath(); ctx.moveTo(540, F.y + 30); ctx.lineTo(540, F.y + F.h - 30); ctx.stroke(); ctx.restore();
         K.redX(540, 740, lt > x ? lerp(1.9, 1.15, eo(seg(lt, x, x + 0.18))) : 0, lt > x ? 1 : 0);
       } });
     cue(st, 'whoosh'); cue(st + x + 0.08, 'slam');
   }
 
-  // ── 6 · RESULT: back on the third, shutter on "shot", the print + check on "balanced" ──
+  // ── 6 · HORIZON: horizon drops from the middle to the lower line on "line"; red ghost of the middle on "middle" ──
   {
-    const st = cut(5), shot = Wd('shot', 5) - st, bal = Wd('balanced', 5) - st;
-    add({ id: 'S06', at: st, cam: [540, 760], zoom: 0.05, note: 'shutter on "shot", photo prints, green check on "balanced"',
+    const st = cut(6), ln = Wd('line', 6) - st, mid = Wd('middle', 6) - st;
+    add({ id: 'S07', at: st, cam: [540, 760], zoom: 0.04, note: 'horizon 1/2 → 2/3 on "line" (check), red dashed middle on "middle"',
       draw(lt, d, t) {
         K.studio(t);
-        const p = eio(seg(lt, shot + 0.15, shot + 0.75));            // viewfinder → tilted print
-        const cx = 540, cy = lerp(FRAME.y + FRAME.h / 2, 760, p);
-        const w = lerp(FRAME.w, 740, p), h = lerp(FRAME.h, 820, p);
-        if (p <= 0) bigFinder(t, 2 / 3, 1);
-        else K.print(cx, cy, w, h, lerp(0, -0.06, p), 2 / 3, t);
+        const hz = lerp(0.5, 0.64, eio(seg(lt, ln - 0.4, ln + 0.1)));
+        K.finder(t, { subj: 2 / 3, hz }, { grid: 1, over: (w, h) => {
+          if (lt > mid) { ctx.save(); ctx.strokeStyle = C.red; ctx.lineWidth = 8; ctx.setLineDash([26, 18]); ctx.globalAlpha = seg(lt, mid, mid + 0.2);
+            ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke(); ctx.restore();
+            K.pill('NOT HERE', w * 0.22, h / 2, 44, C.red, C.white, eob(seg(lt, mid, mid + 0.25))); }
+        } });
+        K.check(860, 400, eob(seg(lt, ln, ln + 0.25)) * 0.8);
+      } });
+    cue(st, 'whoosh'); cue(st + ln - 0.4, 'slide', { dur: 0.5, gain: 0.6 }); cue(st + ln + 0.1, 'pop'); cue(st + mid, 'boing', { gain: 0.5 });
+  }
+
+  // ── 7 · RESULT: shutter on "shot", the print + check on "balanced" ──
+  {
+    const st = cut(7), shot = Wd('shot', 7) - st, bal = Wd('balanced', 7) - st;
+    add({ id: 'S08', at: st, cam: [540, 760], zoom: 0.05, note: 'shutter on "shot", photo prints, check on "balanced"',
+      draw(lt, d, t) {
+        K.studio(t);
+        const p = eio(seg(lt, shot + 0.15, shot + 0.75));
+        if (p <= 0) K.finder(t, { subj: 2 / 3 }, { grid: 1 });
+        else K.print(540, lerp(F.y + F.h / 2, 760, p), lerp(F.w, 740, p), lerp(F.h, 820, p), lerp(0, -0.06, p), 2 / 3, t);
         K.check(850, 400, eob(seg(lt, bal - 0.05, bal + 0.25)) * 0.9);
         K.flash(lt > shot ? 0.85 * (1 - seg(lt, shot, shot + 0.3)) : 0);
       } });
     cue(st, 'whoosh'); cue(st + shot, 'shutter'); cue(st + shot + 0.2, 'slide', { dur: 0.5, gain: 0.6 }); cue(st + bal, 'sparkle', { dur: 0.8 });
   }
 
-  // ── 7 · END CARD: follow + handle + next lesson ──
+  // ── 8 · TRY IT: three prints fan out, TAG @handle on "tag" ──
   {
-    const st = cut(6);
-    add({ id: 'S07', at: st, cam: [540, 700], zoom: 0.05, note: 'FOLLOW + handle, next: lesson 02',
-      draw: (lt, d, t) => K.endCard(lt, t, Wd('follow', 6) - st, Wd('two', 6) - st, 2, 'TAP TO FOCUS') });
-    cue(st, 'whoosh'); cue(Wd('follow', 6), 'pop'); cue(Wd('two', 6), 'pop', { gain: 0.6 });
+    const st = cut(8), tag = Wd('tag', 8) - st;
+    add({ id: 'S09', at: st, cam: [540, 740], zoom: 0.05, note: 'three prints fan out, tag pill on "tag"',
+      draw(lt, d, t) {
+        K.studio(t);
+        [[-0.16, 300, 0.4], [0.14, 780, 0.75], [0, 540, 2 / 3]].forEach(([rot, x, subj], i) => {
+          const p = eob(seg(lt, i * 0.15, i * 0.15 + 0.4)); if (p <= 0) return;
+          K.print(lerp(540, x, p), 720 + (i === 2 ? 0 : 40), 460, 540, rot * p, subj, t);
+        });
+        K.pill(`TAG ${K.HANDLE}`, 540, 1130, 56, C.yellow, C.ink, eob(seg(lt, tag, tag + 0.25)));
+      } });
+    cue(st, 'whoosh'); [0, 1, 2].forEach((i) => cue(st + i * 0.15, 'slide', { dur: 0.3, gain: 0.4 })); cue(st + tag, 'pop');
   }
 
-  // drawn on top of every shot, outside the camera moves (so it never gets cropped)
+  // ── 9 · END CARD ──
+  {
+    const st = cut(9);
+    add({ id: 'S10', at: st, cam: [540, 700], zoom: 0.05, note: 'avatar, FOLLOW, next: lesson 02',
+      draw: (lt, d, t) => K.endCard(lt, t, Wd('follow', 9) - st, Wd('two', 9) - st, 2, 'TAP TO FOCUS') });
+    cue(st, 'whoosh'); cue(Wd('follow', 9), 'pop'); cue(Wd('two', 9), 'pop', { gain: 0.6 });
+  }
+
   const overlay = (t) => K.seriesBadge(LESSON, seg(t, 0.15, 0.55));
   return { shots: S, cues: CUES, overlay };
 }

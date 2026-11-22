@@ -1,5 +1,5 @@
 {
- "duration": 15.602,
+ "duration": 25.125,
  "voice": "af_heart",
  "speed": 1.08,
  "lines": [
@@ -17,33 +17,51 @@
   },
   {
    "i": 2,
-   "text": "Your fingers leave grease on it every day,",
+   "text": "Your fingers touch it all day, and leave grease behind,",
    "start": 3.992,
-   "end": 5.812
+   "end": 6.802
   },
   {
    "i": 3,
-   "text": "and that smudge makes lights glow and details blur.",
-   "start": 6.212,
-   "end": 9.029
+   "text": "and pockets and bags add dust and lint.",
+   "start": 7.162,
+   "end": 9.322
   },
   {
    "i": 4,
-   "text": "Wipe it with a soft cloth,",
-   "start": 9.249,
-   "end": 10.419
+   "text": "That film makes lights glow and details blur.",
+   "start": 9.542,
+   "end": 11.965
   },
   {
    "i": 5,
-   "text": "not your shirt.",
-   "start": 10.659,
-   "end": 11.386
+   "text": "Wipe it gently with a soft microfiber cloth,",
+   "start": 12.185,
+   "end": 14.845
   },
   {
    "i": 6,
-   "text": "Crisp and clear. Follow for lesson four!",
-   "start": 11.606,
-   "end": 13.882
+   "text": "not your shirt, which can rub grit into the glass.",
+   "start": 15.305,
+   "end": 17.856
+  },
+  {
+   "i": 7,
+   "text": "Make it a habit: one quick wipe before every shot.",
+   "start": 18.076,
+   "end": 20.835
+  },
+  {
+   "i": 8,
+   "text": "Crisp and clear.",
+   "start": 21.055,
+   "end": 21.914
+  },
+  {
+   "i": 9,
+   "text": "Follow for lesson four!",
+   "start": 22.134,
+   "end": 23.405
   }
  ]
 }

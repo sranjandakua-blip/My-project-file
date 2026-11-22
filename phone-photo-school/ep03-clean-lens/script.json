@@ -21,24 +21,36 @@
       "caps": "LESSON *THREE | CLEAN YOUR *LENS"
     },
     {
-      "text": "Your fingers leave grease on it every day,",
-      "caps": "YOUR FINGERS LEAVE *GREASE | EVERY *DAY"
+      "text": "Your fingers touch it all day, and leave grease behind,",
+      "caps": "YOUR *FINGERS | LEAVE *GREASE | *BEHIND"
     },
     {
-      "text": "and that smudge makes lights glow and details blur.",
-      "caps": "THAT *SMUDGE | MAKES LIGHTS *GLOW | DETAILS *BLUR"
+      "text": "and pockets and bags add dust and lint.",
+      "caps": "POCKETS AND *BAGS | ADD *DUST"
     },
     {
-      "text": "Wipe it with a soft cloth,",
-      "caps": "WIPE IT WITH A *SOFT CLOTH"
+      "text": "That film makes lights glow and details blur.",
+      "caps": "LIGHTS *GLOW | DETAILS *BLUR"
     },
     {
-      "text": "not your shirt.",
-      "caps": "NOT YOUR *SHIRT"
+      "text": "Wipe it gently with a soft microfiber cloth,",
+      "caps": "WIPE IT *GENTLY | SOFT *MICROFIBER"
     },
     {
-      "text": "Crisp and clear. Follow for lesson four!",
-      "caps": "CRISP AND *CLEAR | *FOLLOW | FOR LESSON *FOUR"
+      "text": "not your shirt, which can rub grit into the glass.",
+      "caps": "NOT YOUR *SHIRT | RUB *GRIT | INTO THE *GLASS"
+    },
+    {
+      "text": "Make it a habit: one quick wipe before every shot.",
+      "caps": "MAKE IT A *HABIT | ONE QUICK *WIPE | EVERY *SHOT"
+    },
+    {
+      "text": "Crisp and clear.",
+      "caps": "CRISP AND *CLEAR"
+    },
+    {
+      "text": "Follow for lesson four!",
+      "caps": "*FOLLOW | FOR LESSON *FOUR"
     }
   ]
 }

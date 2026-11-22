@@ -1,7 +1,7 @@
 # Phone Photo School
 
 An Instagram series that teaches phone photography step by step, from the basics to Pro mode, shot on the S26 Ultra.
-Each post is a **15-second 9:16 flat-2D animated reel** with an AI voiceover, word-synced captions, sound effects and a quiet music bed.
+Each post is a **~25-second 9:16 flat-2D animated reel** with an AI voiceover, word-synced captions, sound effects and a quiet music bed.
 Everything is generated in code and costs nothing. No AI images, and no paid APIs.
 
 Every end card shows the creator avatar (a flat cartoon drawn from the profile photo, `avatar()` in kit.js) above @the_linse_art (`HANDLE` in kit.js). Finished: Lessons 01–05 (`epNN-*/renders/*.mp4`, each with a cover JPG). Instagram captions and hashtags are in [POSTS.md](POSTS.md).
@@ -10,13 +10,13 @@ Every end card shows the creator avatar (a flat cartoon drawn from the profile p
 | beat | time | what |
 |---|---|---|
 | Hook | 0–2 s | a question, phone rises with the camera app open |
-| Lesson card | 2–3.5 s | `LESSON 0N` + the topic pill |
-| How | ~3 s | where the setting is, shown on a phone screen (tap, slide, toggle) |
-| Rule / demo | ~3 s | the big viewfinder showing the idea |
-| Wrong vs right | ~3 s | red X on the mistake, then the fixed shot with a green check |
-| End card | ~3 s | + FOLLOW and the NEXT lesson teaser |
+| Lesson card | 2–4 s | `LESSON 0N` + the topic pill |
+| Why / how | ~6 s | what goes wrong + where the setting is (tap, slide, toggle) |
+| Demo | ~6 s | the big viewfinder showing the idea |
+| Wrong vs right + pro tip | ~5 s | red X on the mistake, the extra tip, green check |
+| End card | ~3 s | cartoon avatar, @the_linse_art, + FOLLOW, NEXT lesson |
 
-Script: **~38–42 words** (≈15 s at voice speed 1.08), one line per cut, written the way you'd say it out loud.
+Script: **~65–70 words** (≈24–26 s at voice speed 1.08), 9–10 lines, one line per cut, written the way you'd say it out loud.
 
 ## Make the next episode
 ```bash

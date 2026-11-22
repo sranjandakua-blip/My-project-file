@@ -1,5 +1,5 @@
 {
- "duration": 13.791,
+ "duration": 24.536,
  "voice": "af_heart",
  "speed": 1.08,
  "lines": [
@@ -23,27 +23,45 @@
   },
   {
    "i": 3,
-   "text": "Line them up so they run",
+   "text": "Even shadows, staircases and shorelines work.",
    "start": 7.2,
-   "end": 8.53
+   "end": 9.866
   },
   {
    "i": 4,
-   "text": "straight toward your subject,",
-   "start": 8.59,
-   "end": 9.48
+   "text": "Line them up so they run",
+   "start": 10.086,
+   "end": 11.416
   },
   {
    "i": 5,
-   "text": "not off the edge.",
-   "start": 9.71,
-   "end": 10.564
+   "text": "straight toward your subject,",
+   "start": 11.476,
+   "end": 12.366
   },
   {
    "i": 6,
+   "text": "not off the edge.",
+   "start": 12.596,
+   "end": 13.45
+  },
+  {
+   "i": 7,
+   "text": "That way, the eye follows the line and lands right where you want.",
+   "start": 13.67,
+   "end": 17.019
+  },
+  {
+   "i": 8,
+   "text": "Get low and shoot wide with point six, and the lines stretch out even more.",
+   "start": 17.239,
+   "end": 21.308
+  },
+  {
+   "i": 9,
    "text": "Follow for lesson six!",
-   "start": 10.784,
-   "end": 12.071
+   "start": 21.528,
+   "end": 22.816
   }
  ]
 }

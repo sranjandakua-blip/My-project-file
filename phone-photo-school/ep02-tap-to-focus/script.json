@@ -21,7 +21,11 @@
       "caps": "LESSON *TWO | TAP TO *FOCUS"
     },
     {
-      "text": "Tap your subject on the screen, and it snaps sharp.",
+      "text": "Auto focus guesses what matters, and it often picks the background.",
+      "caps": "AUTO *FOCUS | GUESSES WHAT *MATTERS | PICKS THE *BACKGROUND"
+    },
+    {
+      "text": "So tap your subject on the screen, and it snaps sharp.",
       "caps": "TAP YOUR *SUBJECT | IT SNAPS *SHARP"
     },
     {
@@ -35,6 +39,14 @@
     {
       "text": "or up to brighten shadows.",
       "caps": "OR *UP | BRIGHTEN *SHADOWS"
+    },
+    {
+      "text": "Pro tip: press and hold to lock focus and exposure,",
+      "caps": "*PRO TIP | PRESS AND *HOLD | TO *LOCK IT"
+    },
+    {
+      "text": "so it stays put while you reframe.",
+      "caps": "IT STAYS *PUT | WHILE YOU *REFRAME"
     },
     {
       "text": "Follow for lesson three!",

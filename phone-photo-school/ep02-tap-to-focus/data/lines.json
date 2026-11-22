@@ -1,5 +1,5 @@
 {
- "duration": 15.415,
+ "duration": 24.549,
  "voice": "af_heart",
  "speed": 1.08,
  "lines": [
@@ -17,33 +17,51 @@
   },
   {
    "i": 2,
-   "text": "Tap your subject on the screen, and it snaps sharp.",
+   "text": "Auto focus guesses what matters, and it often picks the background.",
    "start": 4.586,
-   "end": 7.173
+   "end": 8.184
   },
   {
    "i": 3,
-   "text": "See that little sun? Slide it down",
-   "start": 7.393,
-   "end": 9.713
+   "text": "So tap your subject on the screen, and it snaps sharp.",
+   "start": 8.404,
+   "end": 11.21
   },
   {
    "i": 4,
-   "text": "to save bright skies,",
-   "start": 9.793,
-   "end": 10.573
+   "text": "See that little sun? Slide it down",
+   "start": 11.43,
+   "end": 13.75
   },
   {
    "i": 5,
-   "text": "or up to brighten shadows.",
-   "start": 10.763,
-   "end": 12.203
+   "text": "to save bright skies,",
+   "start": 13.83,
+   "end": 14.61
   },
   {
    "i": 6,
+   "text": "or up to brighten shadows.",
+   "start": 14.8,
+   "end": 16.24
+  },
+  {
+   "i": 7,
+   "text": "Pro tip: press and hold to lock focus and exposure,",
+   "start": 16.46,
+   "end": 19.43
+  },
+  {
+   "i": 8,
+   "text": "so it stays put while you reframe.",
+   "start": 19.75,
+   "end": 21.337
+  },
+  {
+   "i": 9,
    "text": "Follow for lesson three!",
-   "start": 12.423,
-   "end": 13.695
+   "start": 21.557,
+   "end": 22.829
   }
  ]
 }

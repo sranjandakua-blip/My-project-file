@@ -26,6 +26,10 @@
       "caps": "CAMERA *SETTINGS | TURN ON *GRID LINES"
     },
     {
+      "text": "Two lines across, two lines down, splitting your frame into thirds.",
+      "caps": "TWO *ACROSS | TWO *DOWN | INTO *THIRDS"
+    },
+    {
       "text": "Now put your subject where the lines cross,",
       "caps": "PUT YOUR *SUBJECT | WHERE LINES *CROSS"
     },
@@ -34,8 +38,16 @@
       "caps": "NOT DEAD *CENTER"
     },
     {
+      "text": "Keep your horizon on a line too, never through the middle.",
+      "caps": "KEEP YOUR *HORIZON | ON A *LINE | NEVER THE *MIDDLE"
+    },
+    {
       "text": "Your shot instantly feels balanced.",
       "caps": "INSTANTLY *BALANCED"
+    },
+    {
+      "text": "Try it on your next walk, and tag me!",
+      "caps": "TRY IT *TODAY | AND *TAG ME"
     },
     {
       "text": "Follow for lesson two!",

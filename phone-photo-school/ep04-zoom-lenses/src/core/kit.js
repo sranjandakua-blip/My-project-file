@@ -1,6 +1,6 @@
 // Phone Photo School component kit: flat 2D shapes, two tones per object, teal = camera UI, yellow = the one key thing,
 // red = wrong, green = right. Every component is a pure function of its arguments (no state between frames).
-import { ctx, C, W, H, TAU, clamp, lerp, seg, eo, eob, rr, circle, ell, line } from './lib.js';
+import { ctx, setCtx, C, W, H, TAU, clamp, lerp, seg, eo, eob, rr, circle, ell, line } from './lib.js';
 
 // ---------- backgrounds ----------
 /** night-studio background: flat fill, soft dot grid, a big faint aperture turning in the corner */
@@ -33,7 +33,7 @@ export function aperture(x, y, r, open, rot, color) {
  *  road {vx}: a road running to the vanishing point x = vx (0..1, may be off-frame) */
 export function scene(w, h, o = {}) {
   const { subj = 0.5, t = 0, sunX = 0.3, zoom = 1, blur = 0, bright = 1, haze = 0 } = o;
-  const hz = h * 0.64;
+  const hz = h * (o.hz ?? 0.64), dy = hz - h * 0.64;            // o.hz moves the horizon (0..1)
   ctx.save(); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
   const f = []; if (blur > 0.2) f.push(`blur(${blur}px)`); if (bright !== 1) f.push(`brightness(${bright})`); if (haze > 0) f.push(`blur(${haze * 5}px)`, `contrast(${1 - haze * 0.3})`);
   if (f.length) ctx.filter = f.join(' ');
@@ -43,7 +43,7 @@ export function scene(w, h, o = {}) {
   }
   ctx.fillStyle = C.sky; ctx.fillRect(0, 0, w, hz);
   ctx.fillStyle = C.skyLow; ctx.fillRect(0, hz * 0.62, w, hz * 0.38);
-  circle(w * sunX, h * 0.27, w * 0.085, C.sun);
+  circle(w * sunX, h * 0.27 + dy, w * 0.085, C.sun);
   for (let i = 0; i < 2; i++) {
     const cx = ((w * (0.25 + i * 0.5) + t * 18 * (i + 1)) % (w * 1.3)) - w * 0.15, cy = h * (0.12 + i * 0.1), s = w * 0.05;
     ctx.fillStyle = C.white; ctx.beginPath();
@@ -51,12 +51,12 @@ export function scene(w, h, o = {}) {
     ctx.fillRect(cx, cy, s * 2.2, s * 0.9);
   }
   if (o.balloon) balloon(o.balloon.x * w, o.balloon.y * h + Math.sin(t * 1.5) * h * 0.004, o.balloon.s * w);
-  const ridge = (pts, col) => { ctx.beginPath(); ctx.moveTo(0, hz); pts.forEach(([a, b]) => ctx.lineTo(a * w, b * h)); ctx.lineTo(w, hz); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); };
+  const ridge = (pts, col) => { ctx.beginPath(); ctx.moveTo(0, hz); pts.forEach(([a, b]) => ctx.lineTo(a * w, b * h + dy)); ctx.lineTo(w, hz); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); };
   ridge([[0, 0.5], [0.18, 0.38], [0.34, 0.5], [0.52, 0.33], [0.72, 0.48], [0.88, 0.4], [1, 0.47]], C.mtnFar);
   ridge([[0, 0.58], [0.22, 0.47], [0.4, 0.6], [0.62, 0.5], [0.82, 0.6], [1, 0.54]], C.mtnNear);
   ctx.fillStyle = C.ground; ctx.fillRect(0, hz, w, h - hz);
   ctx.fillStyle = C.groundDark; ctx.fillRect(0, hz + (h - hz) * 0.55, w, h);
-  if (o.road) road(w, h, hz, o.road.vx);
+  if (o.road) road(w, h, hz, o.road.vx, o.road.spread ?? 0);
   tree(subj * w, h * (o.treeY ?? 0.8), h * 0.0011 * (o.treeS ?? 1));
   if (o.person) person(o.person.x * w, o.person.y * h, o.person.s * h);
   ctx.filter = 'none';
@@ -71,8 +71,8 @@ export function scene(w, h, o = {}) {
 }
 
 /** a road from the bottom of the frame to the vanishing point x = vx*w on the horizon */
-export function road(w, h, hz, vx) {
-  const ax = vx * w, ay = hz + h * 0.005, bl = w * 0.12, br = w * 0.98;
+export function road(w, h, hz, vx, spread = 0) {
+  const ax = vx * w, ay = hz + h * 0.005, bl = w * (0.12 - spread), br = w * (0.98 + spread);
   ctx.fillStyle = '#5C6478'; ctx.beginPath(); ctx.moveTo(bl, h); ctx.lineTo(ax - w * 0.006, ay); ctx.lineTo(ax + w * 0.006, ay); ctx.lineTo(br, h); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#6E778C'; ctx.beginPath(); ctx.moveTo(bl, h); ctx.lineTo(ax - w * 0.006, ay); ctx.lineTo(ax, ay); ctx.lineTo((bl + br) / 2, h); ctx.closePath(); ctx.fill();
   const mx = (bl + br) / 2;                                        // centre dashes, shrinking with distance
@@ -82,7 +82,7 @@ export function road(w, h, hz, vx) {
     ctx.strokeStyle = C.yellow; ctx.lineWidth = lerp(w * 0.018, w * 0.002, u0); ctx.lineCap = 'butt'; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
   }
 }
-export const roadEdges = (w, h, vx) => { const hz = h * 0.64; return [[[w * 0.12, h], [vx * w, hz]], [[w * 0.98, h], [vx * w, hz]]]; };
+export const roadEdges = (w, h, vx, spread = 0, hzF = 0.64) => { const hz = h * hzF; return [[[w * (0.12 - spread), h], [vx * w, hz]], [[w * (0.98 + spread), h], [vx * w, hz]]]; };
 
 /** a foreground flower (stem + petals), base at (x, y), s ≈ height */
 export function flower(x, y, s) {
@@ -319,7 +319,7 @@ export function finder(t, sceneOpts = {}, { grid: g = 0, brackets = null, over =
   const { x, y, w, h } = frame;
   ctx.fillStyle = C.ink; rr(x - 14, y - 14, w + 28, h + 28, 46); ctx.fill();
   ctx.save(); rr(x, y, w, h, 34); ctx.clip(); ctx.translate(x, y);
-  scene(w, h, { t, ...sceneOpts });
+  if (sceneOpts.pixel > 1) pixelScene(w, h, { t, ...sceneOpts }, sceneOpts.pixel); else scene(w, h, { t, ...sceneOpts });
   if (g) grid(0, 0, w, h, g, 6, 'rgba(255,255,255,0.9)');
   if (over) over(w, h);
   ctx.restore();
@@ -495,4 +495,32 @@ export function avatar(x, y, r, sc = 1) {
   ctx.fillStyle = skin; rr(72, -46, 32, 84, 15); ctx.fill();                              // right hand gripping
   ctx.fillStyle = skinD; for (let i = 0; i < 3; i++) { rr(62, -40 + i * 22, 22, 14, 7); ctx.fill(); }
   ctx.restore(); ctx.restore();
+}
+
+/** the scene rendered at 1/px resolution and blown up (a digitally cropped, low-quality look) */
+let _off = null;
+export function pixelScene(w, h, o, px) {
+  const sw = Math.max(8, Math.round(w / px)), sh = Math.max(8, Math.round(h / px));
+  if (!_off) _off = document.createElement('canvas');
+  _off.width = sw; _off.height = sh;
+  const prev = ctx, oc = _off.getContext('2d');
+  setCtx(oc); oc.setTransform(sw / w, 0, 0, sh / h, 0, 0); scene(w, h, o); setCtx(prev);
+  ctx.save(); ctx.imageSmoothingEnabled = false; ctx.drawImage(_off, 0, 0, w, h); ctx.restore();
+}
+
+/** a padlock icon (locked), centre (x, y), s = height */
+export function padlock(x, y, s, color = C.yellow) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.strokeStyle = color; ctx.lineWidth = s * 0.13; ctx.beginPath(); ctx.arc(0, -s * 0.12, s * 0.24, Math.PI, 0); ctx.lineTo(s * 0.24, s * 0.05); ctx.moveTo(-s * 0.24, -s * 0.12); ctx.lineTo(-s * 0.24, s * 0.05); ctx.stroke();
+  ctx.fillStyle = color; rr(-s * 0.36, 0, s * 0.72, s * 0.5, s * 0.08); ctx.fill(); circle(0, s * 0.22, s * 0.07, C.ink);
+  ctx.restore();
+}
+
+/** a stylised eye (the viewer's gaze), centre (x, y), s = width */
+export function eye(x, y, s) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.moveTo(-s / 2 - 6, 0); ctx.quadraticCurveTo(0, -s * 0.5, s / 2 + 6, 0); ctx.quadraticCurveTo(0, s * 0.5, -s / 2 - 6, 0); ctx.fill();
+  ctx.fillStyle = C.white; ctx.beginPath(); ctx.moveTo(-s / 2, 0); ctx.quadraticCurveTo(0, -s * 0.42, s / 2, 0); ctx.quadraticCurveTo(0, s * 0.42, -s / 2, 0); ctx.fill();
+  circle(0, 0, s * 0.18, C.teal); circle(0, 0, s * 0.09, C.ink); circle(-s * 0.05, -s * 0.05, s * 0.035, C.white);
+  ctx.restore();
 }

@@ -1,5 +1,5 @@
 {
- "duration": 15.924,
+ "duration": 26.125,
  "voice": "af_heart",
  "speed": 1.08,
  "lines": [
@@ -17,33 +17,45 @@
   },
   {
    "i": 2,
-   "text": "Point six for huge landscapes,",
+   "text": "Point six, the ultra wide, fits huge landscapes and small rooms.",
    "start": 4.644,
-   "end": 6.474
+   "end": 8.407
   },
   {
    "i": 3,
-   "text": "one x for everyday shots,",
-   "start": 6.794,
-   "end": 8.284
+   "text": "One x, the main camera, is your best all rounder, especially at night.",
+   "start": 8.627,
+   "end": 12.421
   },
   {
    "i": 4,
-   "text": "three x for flattering portraits,",
-   "start": 8.634,
-   "end": 10.094
+   "text": "Three x is perfect for flattering portraits,",
+   "start": 12.641,
+   "end": 14.821
   },
   {
    "i": 5,
-   "text": "and five x to grab details far away.",
-   "start": 10.154,
-   "end": 12.694
+   "text": "and five x grabs details far away.",
+   "start": 15.151,
+   "end": 17.263
   },
   {
    "i": 6,
+   "text": "Tap these buttons instead of pinching,",
+   "start": 17.483,
+   "end": 19.293
+  },
+  {
+   "i": 7,
+   "text": "because in between, it's often just cropping, and you lose quality.",
+   "start": 19.633,
+   "end": 22.895
+  },
+  {
+   "i": 8,
    "text": "Follow for lesson five!",
-   "start": 12.914,
-   "end": 14.204
+   "start": 23.115,
+   "end": 24.405
   }
  ]
 }
