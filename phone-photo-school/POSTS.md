@@ -4,7 +4,7 @@ Upload each MP4 as a Reel. Use the cover JPG next to it in `renders/` as the cov
 
 ---
 ## Lesson 01: The Grid · `ep01-grid/renders/ep01-grid.mp4`
-**Caption:** Lesson 01 📐 Turn on grid lines (Camera settings → Grid lines) and put your subject where the lines cross, not dead center. Keep the horizon on a line too, never through the middle. Instantly more balanced photos. Shot on S26 Ultra. Try it and tag me!
+**Caption:** Lesson 01 📐 Turn on grid lines (Camera settings → General → Composition guide → Grid lines and level) and put your subject where the lines cross, not dead center. Keep the horizon on a line too, never through the middle. Instantly more balanced photos. Shot on S26 Ultra. Try it and tag me!
 Save this for your next shoot 📌 and follow for Lesson 02.
 **Hashtags:** #phonephotography #ruleofthirds #mobilephotography #photographytips #galaxys26ultra #photographyforbeginners #shotonsamsung #learnphotography
 

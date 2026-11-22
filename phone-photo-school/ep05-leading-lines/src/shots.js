@@ -148,34 +148,36 @@ export function buildShots() {
     cue(st, 'whoosh'); cue(st + 0.05, 'zip'); cue(st + edge + 0.05, 'slam');
   }
 
-  // ── 7 · THE EYE FOLLOWS: an eye travels up the road on "follows", lands on the tree on "lands" ──
+  // ── 7 · THE EYE FOLLOWS: the creator's arches photo; an eye travels down the corridor to the far door ──
   {
     const st = cut(7), fol = Wd('follows', 7) - st, lands = Wd('lands', 7) - st, want = Wd('want', 7) - st;
-    add({ id: 'S08', at: st, cam: [600, 720], zoom: 0.08, note: 'eye travels up the road on "follows", hits the tree on "lands", check on "want"',
+    const AR = { cy: 0.6 };
+    add({ id: 'S08', at: st, cam: [540, 740], zoom: 0.07, note: 'arches photo: arrows + eye travel to the far door, lands on "lands"',
       draw(lt, d, t) {
         K.studio(t);
         const p = eio(seg(lt, fol - 0.2, lands));
-        K.finder(t, roadScene(SUBJ), { over: (w, h) => {
-          const x0 = w * 0.55, y0 = h * 0.97, x1 = SUBJ * w, y1 = h * 0.55;
+        K.photoFinder('arches', AR, { tag: seg(lt, want, want + 0.3), over: (w, h, m) => {
+          K.leadArrows([[m.at(0.06, 0.98), m.at(0.45, 0.66)], [m.at(0.94, 0.98), m.at(0.55, 0.66)]], seg(lt, 0, fol), 10);
+          const [x0, y0] = m.at(0.5, 0.97), [x1, y1] = m.at(0.5, 0.63);
           ctx.save(); ctx.setLineDash([18, 16]); ctx.strokeStyle = C.yellow; ctx.lineWidth = 8;
           ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(lerp(x0, x1, p), lerp(y0, y1, p)); ctx.stroke(); ctx.restore();
           if (lt > lands) K.hotspot(x1, y1, 2, seg(lt, lands, lands + 0.2), t);
           K.eye(lerp(x0, x1, p), lerp(y0, y1, p) - 60, lerp(150, 90, p));
-        }, brackets: lt > lands ? [SUBJ, 0.55, 120] : null });
+        } });
         K.check(860, 400, eob(seg(lt, want, want + 0.25)) * 0.8);
       } });
-    cue(st, 'whoosh'); cue(st + fol - 0.2, 'slide', { dur: lands - fol + 0.2, gain: 0.7 }); cue(st + lands, 'pop'); cue(st + want, 'sparkle', { dur: 0.5 });
+    cue(st, 'whoosh'); cue(st + 0.1, 'zip', { gain: 0.5 }); cue(st + fol - 0.2, 'slide', { dur: lands - fol + 0.2, gain: 0.7 }); cue(st + lands, 'pop'); cue(st + want, 'sparkle', { dur: 0.5 });
   }
 
-  // ── 8 · GET LOW + .6x: the road spreads wide at the bottom; .6x chip on "point", arrows on "stretch" ──
+  // ── 8 · GET LOW + .6x: the creator's night courtyard; the view widens, arrows run up the walkway on "stretch" ──
   {
     const st = cut(8), low = Wd('low', 8) - st, wide = Wd('wide', 8) - st, pt = Wd('point', 8) - st, str = Wd('stretch', 8) - st;
-    add({ id: 'S09', at: st, cam: [540, 760], zoom: 0.06, note: 'GET LOW on "low", road widens on "wide", .6x chip on "point", arrows on "stretch"',
+    add({ id: 'S09', at: st, cam: [540, 760], zoom: 0.06, note: 'courtyard photo widens on "wide", .6 chip on "point", arrows on "stretch"',
       draw(lt, d, t) {
         K.studio(t);
-        const g = eio(seg(lt, low - 0.1, pt + 0.5)), sp = lerp(0, 0.6, g), hzF = lerp(0.64, 0.47, g);
-        K.finder(t, { ...roadScene(SUBJ, sp), hz: hzF, treeY: hzF + 0.03, treeS: lerp(0.62, 0.42, g) },
-          { over: (w, h) => K.leadArrows(arrowsTo(w, h, SUBJ, Math.min(sp, 0.12), hzF), seg(lt, str - 0.1, str + 0.5), 14) });
+        const g = eio(seg(lt, wide - 0.1, pt + 0.5));
+        K.photoFinder('courtyard', { cy: 0.62, zoom: lerp(1.5, 1, g) }, { tag: seg(lt, str + 0.3, str + 0.6), over: (w, h, m) =>
+          K.leadArrows([[m.at(0.27, 0.99), m.at(0.47, 0.57)], [m.at(0.73, 0.99), m.at(0.53, 0.57)]], seg(lt, str - 0.1, str + 0.5), 14) });
         K.pill('GET LOW', 300, 400, 54, C.yellow, C.ink, eob(seg(lt, low, low + 0.25)));
         if (lt > pt) { const p = eob(seg(lt, pt, pt + 0.25)); ctx.save(); ctx.translate(840, 400); ctx.scale(p, p);
           circle(0, 5, 66, C.ink); circle(0, 0, 66, C.yellow); ctx.fillStyle = C.ink; ctx.font = '900 54px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('.6', 0, 3); ctx.restore(); }

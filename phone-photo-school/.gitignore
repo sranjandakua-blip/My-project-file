@@ -1,2 +1,6 @@
 */review/
 */data/*.wav
+# the creator's personal photos and the videos/covers rendered from them stay local (not pushed)
+brand/photos/
+*/assets/photos/
+*/renders/

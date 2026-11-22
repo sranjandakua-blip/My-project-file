@@ -83,7 +83,9 @@ export function buildShots() {
     add({ id: 'S05', at: st, cam: [540, 700], zoom: 0.06, note: 'photo hazes on "glow", blurs on "blur"; dirty lens inset',
       draw(lt, d, t) {
         K.studio(t);
-        K.finder(t, { subj: 0.62, haze: eo(seg(lt, glow - 0.1, glow + 0.4)), blur: lerp(0, 6, eo(seg(lt, blur - 0.1, blur + 0.3))) });
+        const hz = eo(seg(lt, glow - 0.1, glow + 0.4));
+        K.photoFinder('beam', { cx: 0.42, cy: 0.55, zoom: 1.25, haze: hz, blur: lerp(0, 5, eo(seg(lt, blur - 0.1, blur + 0.3))) });
+        K.pill('SMUDGE (SIMULATED)', 330, 1160, 36, 'rgba(10,12,16,0.8)', C.white, hz);
         const ip = eob(seg(lt, 0.1, 0.4));
         if (ip > 0) { ctx.save(); ctx.translate(850, 420); ctx.scale(ip, ip); K.lens(0, 0, 90, 1); ctx.restore(); }
       } });
@@ -151,7 +153,7 @@ export function buildShots() {
     add({ id: 'S09', at: st, cam: [540, 700], zoom: 0.06, note: 'crisp photo, check on "clear"',
       draw(lt, d, t) {
         K.studio(t);
-        K.finder(t, { subj: 0.62 });
+        K.photoFinder('beam', { cx: 0.42, cy: 0.55, zoom: 1.25 }, { tag: seg(lt, clear + 0.1, clear + 0.4) });
         K.check(850, 400, eob(seg(lt, clear, clear + 0.25)) * 0.8);
       } });
     cue(st, 'whoosh'); cue(st + clear, 'sparkle', { dur: 0.6 });

@@ -1,6 +1,6 @@
 // PHONE PHOTO SCHOOL · LESSON 04: THE ZOOM LENSES (25 s): the shot list.
 // Keep key action between y 200 and 1250: the caption lives at y 1250-1550.
-import { ctx, C, W, H, clamp, lerp, seg, eo, eio, eob, circle, line } from './core/lib.js';
+import { ctx, C, W, H, clamp, lerp, seg, eo, eio, eob, circle, line, rr } from './core/lib.js';
 import { L, Wd, T } from './core/timing.js';
 import * as K from './core/kit.js';
 
@@ -14,26 +14,36 @@ const Z = [
   { chip: '3x', name: '3X TELEPHOTO', zoom: 4.2, zx: 0.36, zy: 0.735 },
   { chip: '5x', name: '5X TELEPHOTO', zoom: 7, zx: 0.8, zy: 0.215 },
 ];
-const chipX = (i) => 540 + (i - 1.5) * 190, CHIP_Y = 1170;
+// the creator's real zoom row: .6 · 1× · 2 · 3 · 5 · 10 · 100 (Z index → chip index)
+const ROW = ['.6', '1', '2', '3', '5', '10', '100'], ZI = [0, 1, 3, 4];
+const chipX = (i) => 540 + (i - 3) * 122, CHIP_Y = 1170;
 
-function chips(sel, tapP = 0) {
-  Z.forEach((z, i) => {
+function chips(sel, tapP = 0) {            // sel = index into ROW (-1 = none)
+  ctx.fillStyle = C.ink; rr(540 - 450, CHIP_Y - 60, 900, 128, 64); ctx.fill();
+  ctx.fillStyle = '#2A2A2C'; rr(540 - 450, CHIP_Y - 64, 900, 128, 64); ctx.fill();
+  ROW.forEach((z, i) => {
     const on = i === sel, s = on ? 1 + 0.12 * eob(clamp(tapP)) : 1;
     ctx.save(); ctx.translate(chipX(i), CHIP_Y); ctx.scale(s, s);
-    ctx.beginPath(); ctx.arc(0, 4, 62, 0, 7); ctx.fillStyle = C.ink; ctx.fill();
-    ctx.beginPath(); ctx.arc(0, 0, 62, 0, 7); ctx.fillStyle = on ? C.yellow : C.panel2; ctx.fill();
-    ctx.fillStyle = on ? C.ink : C.white; ctx.font = '900 46px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(z.chip, 0, 2);
-    ctx.restore();
+    if (on) { ctx.beginPath(); ctx.arc(0, 0, 54, 0, 7); ctx.fillStyle = C.yellow; ctx.fill(); }
+    ctx.fillStyle = on ? C.ink : C.white; ctx.font = `900 ${on ? 44 : 40}px Inter`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(on ? `${z}×` : z, 0, 2); ctx.restore();
   });
 }
-/** the zoom demo: viewfinder between lens a and b (p 0..1), chip row with b selected; extra = scene overrides */
-function zoomView(t, a, b, p, tapP, extra = {}) {
-  const A = Z[a], B = Z[b], q = eio(clamp(p));
-  const zoom = Math.exp(lerp(Math.log(A.zoom), Math.log(B.zoom), q));
-  K.finder(t, { ...SCENE, zoom, zx: lerp(A.zx, B.zx, q), zy: lerp(A.zy, B.zy, q), ...extra }, { frame: FR });
-  K.pill(B.name, 540, FR.y + 60, 40, 'rgba(10,12,16,0.75)', C.white, 1);
-  chips(b, tapP);
-  K.tap(chipX(b), CHIP_Y, tapP, 1.2);
+// one of the creator's photos per lens (what each lens is good for)
+const SHOT = [['courtyard', { cy: 0.55 }], ['lighthouse', { cy: 0.55 }], ['kittens', { cy: 0.62 }], ['templeTop', { cx: 0.72, cy: 0.52 }]];
+/** lens demo: photo b (crossfading in from photo a with a push-in) and the zoom row with lens b selected */
+function zoomView(t, a, b, p, tapP, extra = null) {
+  const { x, y, w, h } = FR, q = eio(clamp(p));
+  ctx.fillStyle = C.ink; rr(x - 14, y - 14, w + 28, h + 28, 46); ctx.fill();
+  ctx.save(); rr(x, y, w, h, 34); ctx.clip(); ctx.translate(x, y);
+  const [kb, ob] = extra ?? SHOT[b];
+  K.photo(kb, w, h, { ...ob, zoom: (ob.zoom ?? 1) * (a === b ? 1 : lerp(1.15, 1, q)) });
+  if (a !== b && q < 1) { const [ka, oa] = SHOT[a]; ctx.globalAlpha = 1 - q; K.photo(ka, w, h, { ...oa, zoom: (oa.zoom ?? 1) * lerp(1, 1.5, q) }); ctx.globalAlpha = 1; }
+  ctx.restore();
+  K.pill(Z[b].name, 540, FR.y + 60, 40, 'rgba(10,12,16,0.75)', C.white, 1);
+  chips(ZI[b], tapP);
+  K.tap(chipX(ZI[b]), CHIP_Y, tapP, 1.2);
+  K.shotTag(FR.x + FR.w - 24, FR.y + FR.h - 30, 1);
 }
 
 export function buildShots() {
@@ -73,8 +83,8 @@ export function buildShots() {
       draw(lt, d, t) {
         K.studio(t);
         zoomView(t, 0, 0, 1, seg(lt, tapT - 0.05, tapT + 0.4));
-        K.pill('LANDSCAPES', 330, 1010, 44, C.teal, C.ink, eob(seg(lt, land, land + 0.25)));
-        K.pill('SMALL ROOMS', 750, 1010, 44, C.teal, C.ink, eob(seg(lt, rooms, rooms + 0.25)));
+        K.pill('LANDSCAPES', 330, 440, 44, C.teal, C.ink, eob(seg(lt, land, land + 0.25)));
+        K.pill('SMALL ROOMS', 750, 440, 44, C.teal, C.ink, eob(seg(lt, rooms, rooms + 0.25)));
       } });
     cue(st, 'whoosh'); cue(st + tapT, 'tap'); cue(st + land, 'pop', { gain: 0.5 }); cue(st + rooms, 'pop', { gain: 0.5 });
   }
@@ -86,9 +96,10 @@ export function buildShots() {
       draw(lt, d, t) {
         K.studio(t);
         const dusk = eio(seg(lt, night - 0.3, night + 0.3));
-        zoomView(t, 0, 1, seg(lt, tapT + 0.05, tapT + 0.7), seg(lt, tapT - 0.05, tapT + 0.4), { bright: lerp(1, 0.5, dusk) });
-        if (lt < night) K.pill('ALL-ROUNDER', 540, 1010, 44, C.teal, C.ink, eob(seg(lt, all, all + 0.25)));
-        else K.pill('BEST IN LOW LIGHT', 540, 1010, 44, C.yellow, C.ink, eob(seg(lt, night, night + 0.25)));
+        zoomView(t, 0, 1, seg(lt, tapT + 0.05, tapT + 0.7), seg(lt, tapT - 0.05, tapT + 0.4));
+        if (dusk > 0) { ctx.save(); rr(FR.x, FR.y, FR.w, FR.h, 34); ctx.clip(); ctx.translate(FR.x, FR.y); ctx.globalAlpha = dusk; K.photo('beam', FR.w, FR.h, { cx: 0.45 }); ctx.restore(); K.shotTag(FR.x + FR.w - 24, FR.y + FR.h - 30, 1); }
+        if (lt < night) K.pill('ALL-ROUNDER', 540, 440, 44, C.teal, C.ink, eob(seg(lt, all, all + 0.25)));
+        else K.pill('BEST IN LOW LIGHT', 540, 440, 44, C.yellow, C.ink, eob(seg(lt, night, night + 0.25)));
       } });
     cue(st, 'whoosh'); cue(st + tapT, 'tap'); cue(st + tapT + 0.05, 'slide', { dur: 0.6, gain: 0.6 }); cue(st + all, 'pop', { gain: 0.5 }); cue(st + night, 'pop');
   }
@@ -100,7 +111,7 @@ export function buildShots() {
       draw(lt, d, t) {
         K.studio(t);
         zoomView(t, 1, 2, seg(lt, tapT + 0.05, tapT + 0.7), seg(lt, tapT - 0.05, tapT + 0.4));
-        K.pill('PORTRAITS', 540, 1010, 44, C.teal, C.ink, eob(seg(lt, por, por + 0.25)));
+        K.pill('PORTRAITS', 540, 440, 44, C.teal, C.ink, eob(seg(lt, por, por + 0.25)));
       } });
     cue(st, 'whoosh'); cue(st + tapT, 'tap'); cue(st + tapT + 0.05, 'slide', { dur: 0.6, gain: 0.6 }); cue(st + por, 'pop', { gain: 0.5 });
   }
@@ -112,7 +123,7 @@ export function buildShots() {
       draw(lt, d, t) {
         K.studio(t);
         zoomView(t, 2, 3, seg(lt, tapT + 0.05, tapT + 0.8), seg(lt, tapT - 0.05, tapT + 0.4));
-        K.pill('FAR DETAILS', 540, 1010, 44, C.teal, C.ink, eob(seg(lt, far, far + 0.25)));
+        K.pill('FAR DETAILS', 540, 440, 44, C.teal, C.ink, eob(seg(lt, far, far + 0.25)));
       } });
     cue(st, 'whoosh'); cue(st + tapT, 'tap'); cue(st + tapT + 0.05, 'slide', { dur: 0.7, gain: 0.6 }); cue(st + far, 'pop', { gain: 0.5 });
   }
@@ -123,10 +134,10 @@ export function buildShots() {
     add({ id: 'S07', at: st, cam: [540, 760], zoom: 0.03, note: 'chips ✓ on "tap", pinch gesture ✗ on "pinching"',
       draw(lt, d, t) {
         K.studio(t);
-        K.finder(t, { ...SCENE, zoom: Z[1].zoom, zx: Z[1].zx, zy: Z[1].zy }, { frame: FR });
-        const pulse = lt > tap ? Math.floor((lt - tap) / 0.22) % 4 : 1;
+        K.photoFinder('boats', { cy: 0.7 }, { frame: FR, tag: true });
+        const pulse = lt > tap ? [0, 1, 3, 4][Math.floor((lt - tap) / 0.22) % 4] : 1;
         chips(pulse, 0.6);
-        K.check(940, 1060, eob(seg(lt, tap, tap + 0.25)) * 0.5);
+        K.check(900, 430, eob(seg(lt, tap, tap + 0.25)) * 0.6);
         // pinch: two fingertips spreading on the screen
         const pp = seg(lt, pin - 0.6, pin + 0.1), sp = lerp(40, 170, eio(pp));
         if (pp > 0) for (const sx of [-1, 1]) {
@@ -145,10 +156,10 @@ export function buildShots() {
       draw(lt, d, t) {
         K.studio(t);
         const px = lerp(1, 30, eio(seg(lt, cr - 0.15, cr + 0.3)));
-        K.finder(t, { ...SCENE, zoom: 3, zx: 0.42, zy: 0.66, pixel: px }, { frame: FR });
+        K.photoFinder('boats', { cx: 0.37, cy: 0.72, zoom: 2.4, pixel: px }, { frame: FR });
         K.pill('2.2x', 540, FR.y + 60, 44, C.red, C.white, eob(seg(lt, bt, bt + 0.25)));
         chips(-1);
-        K.pill('LOSE QUALITY', 540, 1010, 48, C.red, C.white, eob(seg(lt, ql, ql + 0.25)));
+        K.pill('LOSE QUALITY', 540, 440, 48, C.red, C.white, eob(seg(lt, ql, ql + 0.25)));
       } });
     cue(st, 'whoosh'); cue(st + bt, 'pop'); cue(st + cr, 'sizzle', { dur: 0.6 }); cue(st + ql, 'slam', { gain: 0.6 });
   }

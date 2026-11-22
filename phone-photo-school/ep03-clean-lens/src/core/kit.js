@@ -5,9 +5,12 @@ import { T } from './timing.js';
 
 // brand images (assets/), loaded once by main.js before the first frame
 export const IMG = {};
+// the creator's own S26 Ultra photos (assets/photos/<key>.jpg)
+export const PHOTOS = ['geese', 'couple', 'boats', 'courtyard', 'lobby', 'beam', 'lighthouse', 'arches', 'tower', 'sunset', 'kittens', 'templeNight', 'templeTop'];
 export async function loadAssets() {
   const load = (k, f) => new Promise((res) => { const i = new Image(); i.onload = () => { IMG[k] = i; res(); }; i.onerror = () => res(); i.src = f; });
-  await Promise.all([load('mark', 'assets/logo-mark.png'), load('full', 'assets/logo-full.png')]);
+  await Promise.all([load('mark', 'assets/logo-mark.png'), load('full', 'assets/logo-full.png'),
+    ...PHOTOS.map((k) => load(k, `assets/photos/${k}.jpg`))]);
 }
 /** the closing logo sting: starts this many seconds before the end */
 export const STING = 1.9;
@@ -152,66 +155,110 @@ export function phone(x, y, s, rot, drawScreen) {
   ctx.restore();
 }
 
-/** the viewfinder rect inside a screen of size (w, h) */
-export const viewfinder = (w, h) => ({ x: 0, y: h * 0.1, w, h: h * 0.68 });
-
-/** camera app screen: viewfinder (scene + optional grid) and the UI chrome. o: { t, subj, grid, press, gearHi } */
+// The camera app, drawn from the creator's own One UI screenshots (positions are fractions of a 923 x 2000 screen).
+const CAM_ZOOM = [['.6', 234], ['1', 307], ['2', 387], ['3', 461], ['5', 538], ['10', 616], ['100', 690]];
+const _zoomKey = (z) => String(z ?? '1').replace(/[x×]/g, '');
+/** the viewfinder rect inside a screen of size (w, h): 3:4, under the top icon row */
+export const viewfinder = (w, h) => ({ x: 0, y: h * 158 / 2000, w, h: w * 4 / 3 });
+/** camera app screen. o: { t, subj, scene, photo, photoOpts, grid (0..1 lines drawn in), press, quick (0..1 quick-settings bar),
+ *  gearHi, zoomSel ('.6','1','2','3','5','10','100'), over(vw, vh, k) draws on the viewfinder } */
 export function cameraApp(w, h, o = {}) {
-  const k = w / 472, v = viewfinder(w, h);
+  const X = (x) => x / 923 * w, Y = (y) => y / 2000 * h, k = w / 472, v = viewfinder(w, h);
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
   ctx.save(); ctx.translate(v.x, v.y); ctx.beginPath(); ctx.rect(0, 0, v.w, v.h); ctx.clip();
-  scene(v.w, v.h, { subj: o.subj ?? 0.5, t: o.t ?? 0, ...(o.scene || {}) });
-  if (o.grid) grid(0, 0, v.w, v.h, o.grid, 3 * k, 'rgba(255,255,255,0.85)');
+  if (o.photo) photo(o.photo, v.w, v.h, o.photoOpts || {}); else scene(v.w, v.h, { subj: o.subj ?? 0.5, t: o.t ?? 0, ...(o.scene || {}) });
+  if (o.grid) grid(0, 0, v.w, v.h, o.grid, X(2.5), 'rgba(255,255,255,0.75)');
+  if (o.reticle !== false) {                                         // the level / focus reticle
+    const cx = v.w / 2, cy = Y(773) - v.y, r = X(76);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = X(3);
+    ctx.beginPath(); ctx.arc(cx, cy, r, -1.3, 1.3); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI - 1.3, Math.PI + 1.3); ctx.stroke();
+    line([[cx - X(106), cy], [cx - X(64), cy]], 'rgba(255,255,255,0.85)', X(3)); line([[cx + X(64), cy], [cx + X(106), cy]], 'rgba(255,255,255,0.85)', X(3));
+    line([[cx - X(20), cy], [cx + X(20), cy]], 'rgba(255,255,255,0.85)', X(3)); line([[cx, cy - X(20)], [cx, cy + X(20)]], 'rgba(255,255,255,0.85)', X(3));
+  }
   if (o.over) o.over(v.w, v.h, k);
   ctx.restore();
-  // top bar: gear, flash, ratio
-  gear(48 * k, v.y / 2 + 6 * k, 20 * k, o.gearHi ? C.yellow : C.white, (o.t ?? 0) * (o.gearHi ? 3 : 0));
-  ctx.strokeStyle = C.white; ctx.lineWidth = 4 * k; ctx.lineJoin = 'round';
-  ctx.beginPath(); const fx = 150 * k, fy = v.y / 2 + 6 * k;                         // flash bolt
-  ctx.moveTo(fx + 4 * k, fy - 18 * k); ctx.lineTo(fx - 8 * k, fy + 2 * k); ctx.lineTo(fx + 4 * k, fy + 2 * k); ctx.lineTo(fx - 4 * k, fy + 18 * k); ctx.stroke();
-  ctx.font = `900 ${22 * k}px Inter`; ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('3:4', 250 * k, fy); ctx.fillText('12M', 350 * k, fy);
-  // zoom chips
-  const zy = v.y + v.h - 48 * k;
-  ['.6', '1x', '3', '5'].forEach((z, i) => {
-    const zx = w / 2 + (i - 1.5) * 70 * k; circle(zx, zy, 26 * k, 'rgba(0,0,0,0.45)');
-    ctx.fillStyle = z === (o.zoomSel ?? '1x') ? C.yellow : C.white; ctx.font = `900 ${18 * k}px Inter`; ctx.fillText(z, zx, zy + 1);
-  });
-  // modes + shutter
-  const by = v.y + v.h;
-  ctx.font = `900 ${20 * k}px Inter`;
-  [['PORTRAIT', -150], ['PHOTO', 0], ['VIDEO', 130], ['PRO', 235]].forEach(([m, dx]) => { ctx.fillStyle = m === 'PHOTO' ? C.yellow : '#BFC6D4'; ctx.fillText(m, w / 2 + dx * k, by + 40 * k); });
-  const sx = w / 2, sy = by + (h - by) * 0.58, pr = o.press ?? 0;
-  circle(sx, sy, 64 * k, C.white); circle(sx, sy, 54 * k, '#000'); circle(sx, sy, 48 * k * (1 - 0.15 * pr), pr > 0 ? '#DDE2EA' : C.white);
-  ctx.fillStyle = '#3A4150'; rr(sx - 170 * k, sy - 30 * k, 60 * k, 60 * k, 14 * k); ctx.fill();          // gallery thumb
-  circle(sx + 140 * k, sy, 34 * k, '#2A303B');                                                              // flip camera
-  ctx.strokeStyle = C.white; ctx.lineWidth = 3.5 * k; ctx.beginPath(); ctx.arc(sx + 140 * k, sy, 15 * k, 0.4, 5.2); ctx.stroke();
+  // top icon row: flash off · 12M · motion photo · filters · smile (yellow)
+  const ty = Y(112), ic = 'rgba(255,255,255,0.95)';
+  ctx.strokeStyle = ic; ctx.lineWidth = X(4); ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(X(530), ty - X(22)); ctx.lineTo(X(512), ty + X(2)); ctx.lineTo(X(530), ty + X(2)); ctx.lineTo(X(514), ty + X(24)); ctx.stroke();
+  line([[X(505), ty - X(20)], [X(540), ty + X(20)]], ic, X(3.5));
+  ctx.font = `700 ${X(30)}px Inter`; ctx.fillStyle = ic; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('12M', X(603), ty + X(1));
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)'; rr(X(667), ty - X(20), X(40), X(40), X(10)); ctx.stroke(); line([[X(670), ty - X(18)], [X(704), ty + X(18)]], 'rgba(255,255,255,0.55)', X(3));
+  for (const [dx, dy] of [[-8, 4], [6, -6], [8, 8]]) { ctx.beginPath(); ctx.arc(X(767 + dx), ty + X(dy), X(12), 0, TAU); ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.stroke(); }
+  ctx.strokeStyle = C.yellow; ctx.beginPath(); ctx.arc(X(849), ty, X(20), 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(X(849), ty + X(2), X(10), 0.3, Math.PI - 0.3); ctx.stroke(); circle(X(842), ty - X(6), X(2.5), C.yellow); circle(X(856), ty - X(6), X(2.5), C.yellow);
+  // zoom pill (or the quick-settings bar sliding in over it)
+  const q = clamp(o.quick ?? 0), zy = Y(1476), sel = _zoomKey(o.zoomSel);
+  if (q < 1) {
+    ctx.save(); ctx.globalAlpha = 1 - q;
+    ctx.fillStyle = 'rgba(42,42,44,0.92)'; rr(X(188), Y(1433), X(547), Y(85), Y(42)); ctx.fill();
+    for (const [z, zx] of CAM_ZOOM) {
+      const on = z === sel; if (on) circle(X(zx), zy, X(38), '#55555A');
+      ctx.fillStyle = C.white; ctx.font = `700 ${X(on ? 32 : 29)}px Inter`; ctx.fillText(on ? `${z}×` : z, X(zx), zy + X(1));
+    }
+    circle(X(830), zy, X(40), 'rgba(42,42,44,0.92)');
+    for (const [dx, dy] of [[-9, -9], [9, -9], [-9, 9], [9, 9]]) circle(X(830 + dx), zy + X(dy), X(5), C.white);
+    ctx.restore();
+  }
+  if (q > 0) {
+    ctx.save(); ctx.globalAlpha = q; ctx.translate(0, lerp(X(30), 0, eo(q)));
+    ctx.fillStyle = '#2A2A2C'; rr(X(32), Y(1417), X(859), Y(116), Y(58)); ctx.fill();
+    gear(X(89), zy, X(20), o.gearHi ? C.yellow : C.white, 0);
+    ctx.strokeStyle = C.white; ctx.lineWidth = X(4);
+    ctx.beginPath(); ctx.moveTo(X(213), zy - X(22)); ctx.lineTo(X(195), zy + X(2)); ctx.lineTo(X(213), zy + X(2)); ctx.lineTo(X(197), zy + X(24)); ctx.stroke();
+    line([[X(188), zy - X(20)], [X(223), zy + X(20)]], C.white, X(3.5));
+    ctx.beginPath(); ctx.arc(X(320), zy + X(2), X(21), 0, TAU); ctx.stroke(); line([[X(320), zy + X(2)], [X(330), zy - X(8)]], C.white, X(3.5));
+    ctx.fillStyle = C.white; ctx.font = `700 ${X(30)}px Inter`; ctx.fillText('3:4', X(436), zy + X(1)); ctx.fillText('12M', X(551), zy + X(1));
+    ctx.beginPath(); ctx.arc(X(666), zy, X(21), 0, TAU); ctx.stroke(); line([[X(652), zy + X(12)], [X(680), zy - X(12)]], C.white, X(3));
+    circle(X(833), zy, X(30), '#3A3A3C'); line([[X(822), zy - X(11)], [X(844), zy + X(11)]], C.white, X(4)); line([[X(844), zy - X(11)], [X(822), zy + X(11)]], C.white, X(4));
+    ctx.restore();
+  }
+  // gallery thumb · shutter · switch camera
+  const by = Y(1663);
+  ctx.save(); ctx.beginPath(); ctx.arc(X(148), by, X(60), 0, TAU); ctx.clip();
+  if (IMG.geese) { ctx.translate(X(88), by - X(60)); photo('geese', X(120), X(120), { cx: 0.55, cy: 0.5 }); } else { ctx.fillStyle = '#3A3A3C'; ctx.fillRect(X(88), by - X(60), X(120), X(120)); }
+  ctx.restore();
+  circle(X(461), by, X(82) * (1 - 0.1 * (o.press ?? 0)), '#F8F6F0');
+  circle(X(773), by, X(61), '#2A2A2C');
+  ctx.strokeStyle = C.white; ctx.lineWidth = X(4); ctx.beginPath(); ctx.arc(X(773), by, X(26), 3.6, 5.9); ctx.stroke(); ctx.beginPath(); ctx.arc(X(773), by, X(26), 0.5, 2.8); ctx.stroke();
+  // modes
+  ctx.font = `700 ${X(31)}px Inter`;
+  [['PORTRAIT', 268], ['PHOTO', 461], ['VIDEO', 625], ['MORE', 782]].forEach(([m, mx]) => { ctx.fillStyle = m === 'PHOTO' ? C.white : '#8E8E93'; ctx.fillText(m, X(mx), Y(1845)); });
 }
 
-/** settings screen sliding in from the right (p 0..1); the "Grid lines" row highlights (hl 0..1) and its toggle turns on (on 0..1) */
+/** One UI "Camera settings" (dark), sliding in from the right (p 0..1). The "Composition guide" row highlights (hl 0..1)
+ *  and its switch turns on (on 0..1). Returns { toggle: [x, y] } in screen-local coords, or null while hidden. */
 export function settings(w, h, p, hl, on) {
-  if (p <= 0) return;
-  const k = w / 472, x0 = (1 - eo(p)) * w;
+  if (p <= 0) return null;
+  const X = (x) => x / 624 * w, Y = (y) => y / 1999 * h, x0 = (1 - eo(p)) * w;
   ctx.save(); ctx.translate(x0, 0);
-  ctx.fillStyle = C.bg2; ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = C.white; ctx.font = `900 ${34 * k}px Inter`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  line([[48 * k, 80 * k], [32 * k, 96 * k], [48 * k, 112 * k]], C.white, 5 * k);
-  ctx.fillText('Camera settings', 70 * k, 98 * k);
-  const rows = ['Picture formats', 'Shooting methods', 'Grid lines', 'Location tags', 'Shutter sound', 'Watermark'];
-  rows.forEach((r, i) => {
-    const y = 190 * k + i * 112 * k, isGrid = r === 'Grid lines';
-    if (isGrid && hl > 0) { ctx.globalAlpha = hl; ctx.fillStyle = C.panel2; rr(16 * k, y - 46 * k, w - 32 * k, 92 * k, 22 * k); ctx.fill();
-      ctx.strokeStyle = C.yellow; ctx.lineWidth = 4 * k; ctx.stroke(); ctx.globalAlpha = 1; }
-    ctx.fillStyle = isGrid ? C.white : '#9AA3B5'; ctx.font = `900 ${28 * k}px Inter`; ctx.fillText(r, 44 * k, y);
-    if (isGrid) toggle(w - 90 * k, y, k, on);
-    else if (i !== 0 && i !== 1) toggle(w - 90 * k, y, k, i === 3 ? 0 : 1, true);
-    else line([[w - 70 * k, y - 12 * k], [w - 56 * k, y], [w - 70 * k, y + 12 * k]], '#6B7385', 4 * k);
-  });
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+  line([[X(64), Y(100)], [X(50), Y(120)], [X(64), Y(140)]], C.white, X(4));
+  ctx.fillStyle = C.white; ctx.font = `700 ${X(34)}px Inter`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('Camera settings', X(98), Y(120));
+  const card = (y0, y1) => { ctx.fillStyle = '#1C1C1E'; rr(X(17), Y(y0), X(590), Y(y1 - y0), X(34)); ctx.fill(); };
+  const label = (t, y) => { ctx.fillStyle = '#8E8E93'; ctx.font = `600 ${X(21)}px Inter`; ctx.fillText(t, X(46), Y(y)); };
+  const row = (t, y, sub) => { ctx.fillStyle = C.white; ctx.font = `500 ${X(27)}px Inter`; ctx.fillText(t, X(46), Y(y)); if (sub) { ctx.fillStyle = '#4C8DF6'; ctx.font = `500 ${X(20)}px Inter`; ctx.fillText(sub, X(46), Y(y + 34)); } };
+  const div = (y) => { ctx.fillStyle = '#2C2C2E'; ctx.fillRect(X(42), Y(y), X(540), Math.max(1, Y(2))); };
+  label('Photos', 240); card(268, 540);
+  row('Photo format', 310, 'HEIF'); div(375); row('Watermark', 420); toggle(X(545), Y(420), X(0.58), 0, false, true); div(465); row('Motion photos', 505);
+  label('General', 610); card(638, 1000);
+  row('Tracking auto focus', 685); toggle(X(545), Y(685), X(0.58), 0, false, true); div(730);
+  if (hl > 0) { ctx.save(); ctx.globalAlpha = hl; ctx.strokeStyle = C.yellow; ctx.lineWidth = X(4); rr(X(24), Y(738), X(576), Y(108), X(20)); ctx.stroke(); ctx.restore(); }
+  row('Composition guide', 772, 'Grid lines and level'); toggle(X(545), Y(790), X(0.58), on, false, true); div(850);
+  row('Location tags', 895); toggle(X(545), Y(895), X(0.58), 1, false, true); div(940);
+  row('Save selfies as previewed', 970); toggle(X(545), Y(970), X(0.58), 1, false, true);
+  card(1060, 1180); row('Camera Assistant', 1120);
   ctx.restore();
+  return { toggle: [x0 + X(545), Y(790)] };
 }
 
 /** a switch, on 0..1 (animated), dim = greyed */
-export function toggle(x, y, k, on, dim = false) {
+export function toggle(x, y, k, on, dim = false, oneui = false) {
+  if (oneui) {                                                       // One UI switch: blue track when on, white knob
+    const w = 84 * k, h = 46 * k;
+    ctx.fillStyle = on > 0.5 ? '#3E7BF6' : '#5B5B60'; rr(x - w / 2, y - h / 2, w, h, h / 2); ctx.fill();
+    circle(x - w / 2 + h / 2 + (w - h) * eo(clamp(on)), y, h * 0.38, C.white); return;
+  }
   const w = 84 * k, h = 46 * k;
   ctx.fillStyle = dim ? (on ? '#3D6E8F' : '#3A4150') : on > 0.5 ? C.teal : '#4A5263';
   rr(x - w / 2, y - h / 2, w, h, h / 2); ctx.fill();
@@ -580,3 +627,69 @@ export function logoSting(t) {
   }
 }
 let _glint = null;
+
+// ---------- the creator's photos ----------
+/** cover-fit placement of photo `key` in a w x h box. o: { cx, cy (focus point, 0..1 of the photo), zoom }.
+ *  Returns { dx, dy, dw, dh, at(fx, fy) → [x, y] box-local position of a point on the photo } */
+export function photoMap(key, w, h, o = {}) {
+  const im = IMG[key]; if (!im) return null;
+  const s = Math.max(w / im.width, h / im.height) * (o.zoom ?? 1), dw = im.width * s, dh = im.height * s;
+  const dx = clamp(w / 2 - (o.cx ?? 0.5) * dw, w - dw, 0), dy = clamp(h / 2 - (o.cy ?? 0.5) * dh, h - dh, 0);
+  return { dx, dy, dw, dh, at: (fx, fy) => [dx + fx * dw, dy + fy * dh] };
+}
+let _poff = null;
+/** draw photo `key` cover-fit into box (0,0,w,h). o adds: blur (px), bright (1 = as shot), haze 0..1 (simulated greasy-lens glow), pixel (block size) */
+export function photo(key, w, h, o = {}) {
+  const m = photoMap(key, w, h, o); if (!m) { ctx.fillStyle = C.panel; ctx.fillRect(0, 0, w, h); return null; }
+  const im = IMG[key];
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
+  if (o.pixel > 1) {
+    const sw = Math.max(8, Math.round(w / o.pixel)), sh = Math.max(8, Math.round(h / o.pixel));
+    if (!_poff) _poff = document.createElement('canvas'); _poff.width = sw; _poff.height = sh;
+    const pc = _poff.getContext('2d'); pc.drawImage(im, m.dx * sw / w, m.dy * sh / h, m.dw * sw / w, m.dh * sh / h);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(_poff, 0, 0, w, h); ctx.imageSmoothingEnabled = true;
+  } else {
+    const f = []; if ((o.blur ?? 0) > 0.2) f.push(`blur(${o.blur}px)`); if ((o.bright ?? 1) !== 1) f.push(`brightness(${o.bright})`);
+    if (o.haze > 0) f.push(`blur(${o.haze * 4}px)`, `contrast(${1 - o.haze * 0.35})`);
+    if (f.length) ctx.filter = f.join(' ');
+    ctx.drawImage(im, m.dx, m.dy, m.dw, m.dh); ctx.filter = 'none';
+    if (o.haze > 0) {                                                   // halation: bright parts bloom
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55 * o.haze; ctx.filter = 'blur(26px) brightness(1.5)';
+      ctx.drawImage(im, m.dx, m.dy, m.dw, m.dh); ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 0.16 * o.haze; ctx.fillStyle = '#FFF6E0'; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+  return m;
+}
+/** the big viewfinder showing a real photo. over(w, h, map) draws on top in frame coords */
+export function photoFinder(key, o = {}, { grid: g = 0, over = null, frame = FRAME, tag = false } = {}) {
+  const { x, y, w, h } = frame;
+  ctx.fillStyle = C.ink; rr(x - 14, y - 14, w + 28, h + 28, 46); ctx.fill();
+  ctx.save(); rr(x, y, w, h, 34); ctx.clip(); ctx.translate(x, y);
+  const m = photo(key, w, h, o);
+  if (g) grid(0, 0, w, h, g, 6, 'rgba(255,255,255,0.9)');
+  if (over && m) over(w, h, m);
+  ctx.restore();
+  if (tag) shotTag(x + w - 24, y + h - 30, tag === true ? 1 : tag);
+  return m;
+}
+/** "SHOT ON S26 ULTRA" tag, right-aligned at (x, y) */
+export function shotTag(x, y, a = 1) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.font = '900 28px Inter'; ctx.letterSpacing = '3px';
+  const t = 'SHOT ON S26 ULTRA', tw = ctx.measureText(t).width;
+  ctx.fillStyle = 'rgba(10,12,16,0.72)'; rr(x - tw - 82, y - 26, tw + 98, 52, 26); ctx.fill();
+  if (IMG.mark) ctx.drawImage(IMG.mark, x - tw - 72, y - 21, 44, 44 * IMG.mark.height / IMG.mark.width);
+  ctx.fillStyle = C.white; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(t, x - 6, y + 1);
+  ctx.letterSpacing = '0px'; ctx.restore();
+}
+/** a white-bordered print of photo `key`, centred at (x, y) */
+export function photoPrint(x, y, w, h, rot, key, o = {}) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; rr(-w / 2 + 14, -h / 2 + 18, w, h, 18); ctx.fill();
+  ctx.fillStyle = C.white; rr(-w / 2, -h / 2, w, h, 18); ctx.fill();
+  const m = w * 0.05, iw = w - 2 * m, ih = h - 4 * m;
+  ctx.save(); ctx.translate(-w / 2 + m, -h / 2 + m); const mp = photo(key, iw, ih, o); if (o.over && mp) o.over(iw, ih, mp); ctx.restore();
+  ctx.restore();
+}

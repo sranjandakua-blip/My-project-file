@@ -64,99 +64,109 @@ export function buildShots() {
     cue(st, 'whoosh'); cue(st + mat, 'slide', { dur: bg - mat, gain: 0.4 }); cue(st + bg, 'boing', { gain: 0.5 });
   }
 
-  // ── 3 · TAP: tap the flower → ring lands → flower snaps sharp on "snaps" ──
+  // the creator's photos: kittens (focus + lock), sunset (too bright), temple at night (too dark)
+  const KIT = { cx: 0.5, cy: 0.62 }, KF = [0.5, 0.64];
+  const ringShot = (key, o, fp, v, bright, ringR = 95) => {
+    let r = [540, 760];
+    K.photoFinder(key, { ...o, bright }, { over: (w, h, m) => { const [x, y] = m.at(...fp); r = [F.x + x, F.y + y]; K.focusRing(x, y, ringR, 1); } });
+    if (v != null) K.sunSlider(r[0] - 160, r[1], 380, v, 1, 46);
+    return r;
+  };
+
+  // ── 3 · TAP: the kittens photo starts soft; tap them → snaps sharp on "snaps" ──
   {
     const st = cut(3), tap = Wd('subject', 3) - st - 0.1, sharp = Wd('snaps', 3) - st;
-    add({ id: 'S04', at: st, cam: [640, 760], zoom: 0.06, note: 'tap flower on "subject", sharp on "snaps"',
+    add({ id: 'S04', at: st, cam: [540, 760], zoom: 0.06, note: 'kittens photo soft, tap on "subject", sharp on "snaps"',
       draw(lt, d, t) {
         K.studio(t);
         const p = eio(seg(lt, sharp - 0.15, sharp + 0.2));
-        K.finder(t, { subj: 0.38, flower: { ...FL, blur: lerp(14, 0, p) }, blur: lerp(0, 8, p) }, { over: (w, h) => {
-          const [fx, fy] = head(w, h); K.focusRing(fx, fy, 95, seg(lt, tap, tap + 0.3));
-        } });
-        const [rx, ry] = ringAt(); K.tap(rx, ry, seg(lt, tap - 0.05, tap + 0.4), 1.3);
-        if (lt > sharp) K.pill('SHARP', 300, 420, 60, C.green, C.ink, eob(seg(lt, sharp, sharp + 0.25)));
+        let rp = [540, 760];
+        K.photoFinder('kittens', { ...KIT, blur: lerp(14, 0, p) }, { over: (w, h, m) => {
+          const [x, y] = m.at(...KF); rp = [F.x + x, F.y + y]; K.focusRing(x, y, 120, seg(lt, tap, tap + 0.3));
+        }, tag: seg(lt, sharp + 0.3, sharp + 0.6) });
+        K.tap(rp[0], rp[1], seg(lt, tap - 0.05, tap + 0.4), 1.3);
+        if (lt > sharp) K.pill('SHARP', 300, 400, 60, C.green, C.ink, eob(seg(lt, sharp, sharp + 0.25)));
       } });
     cue(st, 'whoosh'); cue(st + tap, 'tap'); cue(st + sharp, 'sparkle', { dur: 0.6 });
   }
 
-  // ── 4 · THE SUN: over-bright shot; the sun slider pops on "sun", starts down on "down" ──
+  // ── 4 · THE SUN: sunset photo blown out; slider pops on "sun", starts down on "down" ──
+  const SUN = { cy: 0.72 }, SF = [0.39, 0.805];
   {
     const st = cut(4), sun = Wd('sun', 4) - st, down = Wd('down', 4) - st;
-    add({ id: 'S05', at: st, cam: [440, 700], zoom: 0.08, note: 'over-exposed, slider on "sun", moves on "down"',
+    add({ id: 'S05', at: st, cam: [440, 760], zoom: 0.06, note: 'sunset photo over-exposed, slider on "sun", moves on "down"',
       draw(lt, d, t) {
         K.studio(t);
         const v = lerp(0.6, 0.35, eio(seg(lt, down, d)));
-        K.finder(t, { ...focused, bright: 1 + v * 1.5 }, { over: ring });
-        slider(v, seg(lt, sun - 0.1, sun + 0.15));
-        if (lt > sun && lt < sun + 0.6) { const [rx, ry] = ringAt(); K.hotspot(rx - 160, ry - v * 190, 1.6, seg(lt, sun, sun + 0.2), t); }
+        const r = ringShot('sunset', SUN, SF, null, 1 + v * 1.6);
+        ctx.save(); ctx.globalAlpha = seg(lt, sun - 0.1, sun + 0.15); K.sunSlider(r[0] - 160, r[1], 380, v, 1, 46); ctx.restore();
+        if (lt > sun && lt < sun + 0.6) K.hotspot(r[0] - 160, r[1] - v * 190, 1.6, seg(lt, sun, sun + 0.2), t);
         K.pill('TOO BRIGHT', 540, 385, 52, C.red, C.white, eob(seg(lt, 0.1, 0.4)));
       } });
     cue(st, 'whoosh'); cue(st + sun, 'pop'); cue(st + down, 'slide', { dur: 0.6, gain: 0.6 });
   }
 
-  // ── 5 · DOWN: the sky comes back on "skies" ──
+  // ── 5 · DOWN: the real sunset silhouette comes back on "skies" ──
   {
     const st = cut(5), skies = Wd('skies', 5) - st;
-    add({ id: 'S06', at: st, cam: [440, 700], zoom: 0.04, note: 'slider down, sky returns on "skies"',
+    add({ id: 'S06', at: st, cam: [440, 760], zoom: 0.04, note: 'slider down, the real sunset on "skies"',
       draw(lt, d, t) {
         K.studio(t);
-        const v = lerp(0.35, -0.1, eio(seg(lt, 0, skies)));
-        K.finder(t, { ...focused, bright: 1 + Math.max(v, 0) * 1.5 + Math.min(v, 0) * 0.3 }, { over: ring });
-        slider(v, 1);
+        const v = lerp(0.35, -0.05, eio(seg(lt, 0, skies)));
+        ringShot('sunset', SUN, SF, v, 1 + Math.max(v, 0) * 1.6);
         K.check(860, 400, eob(seg(lt, skies, skies + 0.25)) * 0.8);
+        K.shotTag(965, 1180, seg(lt, skies + 0.1, skies + 0.4));
       } });
     cue(st, 'whoosh'); cue(st, 'slide', { dur: 0.5, gain: 0.6 }); cue(st + skies, 'sparkle', { dur: 0.5 });
   }
 
-  // ── 6 · UP: a dark shot; slide up and it brightens on "shadows" ──
+  // ── 6 · UP: the temple at night starts too dark; slide up, it lifts on "shadows" ──
   {
     const st = cut(6), up = Wd('up', 6) - st, sh = Wd('shadows', 6) - st;
-    add({ id: 'S07', at: st, cam: [440, 700], zoom: 0.05, note: 'dark shot, slider up on "up", bright on "shadows"',
+    add({ id: 'S07', at: st, cam: [540, 760], zoom: 0.05, note: 'temple photo dark, slider up on "up", bright on "shadows"',
       draw(lt, d, t) {
         K.studio(t);
-        const v = lerp(-0.6, 0.15, eio(seg(lt, up, sh + 0.2)));
-        K.finder(t, { ...focused, bright: 1 + v * 0.75 }, { over: ring });
-        slider(v, 1);
+        const v = lerp(-0.6, 0.12, eio(seg(lt, up, sh + 0.2)));
+        ringShot('templeNight', { cx: 0.6, cy: 0.7 }, [0.73, 0.83], v, 1 + v * 0.8, 85);
         if (v < -0.25) K.pill('TOO DARK', 540, 385, 52, C.red, C.white, eob(seg(lt, 0.05, 0.3)));
         K.check(860, 400, eob(seg(lt, sh + 0.1, sh + 0.35)) * 0.8);
+        K.shotTag(965, 1180, seg(lt, sh + 0.2, sh + 0.5));
       } });
     cue(st, 'whoosh'); cue(st + up, 'slide', { dur: 0.7, gain: 0.6 }); cue(st + sh + 0.1, 'sparkle', { dur: 0.5 });
   }
 
-  // ── 7 · PRO TIP: press and hold on the flower: a ring fills, then LOCKED on "lock" ──
+  // ── 7 · PRO TIP: press and hold on the kittens: a ring fills, padlock + AE/AF LOCK on "lock" ──
   {
     const st = cut(7), pro = Wd('pro', 7) - st, hold = Wd('press', 7) - st, lock = Wd('lock', 7) - st;
-    add({ id: 'S08', at: st, cam: [640, 700], zoom: 0.06, note: 'PRO TIP pill, press & hold fills a ring, padlock + AE/AF LOCK on "lock"',
+    add({ id: 'S08', at: st, cam: [540, 760], zoom: 0.06, note: 'PRO TIP, hold fills a ring, padlock + AE/AF LOCK on "lock"',
       draw(lt, d, t) {
         K.studio(t);
-        K.finder(t, focused, { over: ring });
-        const [rx, ry] = ringAt();
+        const [rx, ry] = ringShot('kittens', KIT, KF, null, 1, 120);
         const hp = seg(lt, hold, lock);
-        if (hp > 0 && lt < lock + 0.2) {                    // the finger is down: a glow + a filling arc
+        if (hp > 0 && lt < lock + 0.2) {
           ctx.save(); ctx.globalAlpha = 0.85; K.tap(rx, ry, 0.15, 1.4); ctx.restore();
           ctx.strokeStyle = C.white; ctx.lineWidth = 12; ctx.lineCap = 'round';
-          ctx.beginPath(); ctx.arc(rx, ry, 125, -Math.PI / 2, -Math.PI / 2 + hp * Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.arc(rx, ry, 150, -Math.PI / 2, -Math.PI / 2 + hp * Math.PI * 2); ctx.stroke();
         }
         if (lt > lock) {
           const p = eob(seg(lt, lock, lock + 0.25));
-          ctx.save(); ctx.translate(rx, ry - 170); ctx.scale(p, p); K.padlock(0, 0, 110); ctx.restore();
+          ctx.save(); ctx.translate(rx, ry - 200); ctx.scale(p, p); K.padlock(0, 0, 110); ctx.restore();
           K.pill('AE/AF LOCK', 540, 1150, 54, C.yellow, C.ink, p);
         }
-        K.pill('PRO TIP', 300, 420, 54, C.teal, C.ink, eob(seg(lt, pro - 0.05, pro + 0.2)));
+        K.pill('PRO TIP', 300, 400, 54, C.teal, C.ink, eob(seg(lt, pro - 0.05, pro + 0.2)));
       } });
     cue(st, 'whoosh'); cue(st + pro, 'pop'); cue(st + hold, 'slide', { dur: lock - hold, gain: 0.4 }); cue(st + lock, 'thud', { gain: 0.6 }); cue(st + lock + 0.05, 'pop');
   }
 
-  // ── 8 · REFRAME: the framing moves, the flower slides across, focus + exposure stay locked to it ──
+  // ── 8 · REFRAME: the frame pans across the kittens; focus + exposure stay locked on them ──
   {
     const st = cut(8), put = Wd('put', 8) - st, re = Wd('reframe', 8) - st;
-    add({ id: 'S09', at: st, cam: [540, 760], zoom: 0.04, note: 'frame pans, flower + locked ring move together, check on "reframe"',
+    add({ id: 'S09', at: st, cam: [540, 760], zoom: 0.04, note: 'frame pans, ring + padlock follow the kittens, check on "reframe"',
       draw(lt, d, t) {
         K.studio(t);
-        const fx = lerp(0.7, 0.46, eio(seg(lt, 0.1, re + 0.2)));
-        K.finder(t, { subj: lerp(0.38, 0.16, eio(seg(lt, 0.1, re + 0.2))), flower: { ...FL, x: fx, blur: 0 }, blur: 7 }, { over: (w, h) => {
-          const [x, y] = head(w, h, fx); K.focusRing(x, y, 95, 1); K.padlock(x, y - 175, 90);
+        const cx = lerp(0.3, 0.7, eio(seg(lt, 0.1, re + 0.2)));
+        K.photoFinder('kittens', { cx, cy: 0.64, zoom: 1.45 }, { over: (w, h, m) => {
+          const [x, y] = m.at(...KF); K.focusRing(x, y, 130, 1); K.padlock(x, y - 200, 90);
         } });
         K.check(860, 400, eob(seg(lt, re, re + 0.25)) * 0.8);
         K.pill('STAYS LOCKED', 540, 1150, 50, C.yellow, C.ink, eob(seg(lt, put, put + 0.25)));

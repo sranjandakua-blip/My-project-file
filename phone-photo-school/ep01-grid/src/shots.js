@@ -34,25 +34,26 @@ export function buildShots() {
     cue(st, 'whoosh'); cue(Wd('one', 1) - 0.02, 'slam', { gain: 0.8 }); cue(Wd('grid', 1), 'pop');
   }
 
-  // ── 2 · HOW: tap the gear, settings slide in, Grid lines toggles ON ──
+  // ── 2 · HOW: tap ⁘ → quick bar → gear on "settings" → General › Composition guide ON on "grid" ──
   {
-    const st = cut(2), sett = Wd('settings', 2) - st, gr = Wd('grid', 2) - st, tapT = sett - 0.3;
-    const s = 0.92, sw = (K.PHONE.w - 28) * s, k = sw / 472;
-    const scrX = 540 - (K.PHONE.w * s) / 2 + 14 * s, scrY = 800 - (K.PHONE.h * s) / 2 + 14 * s;
-    const gearW = [scrX + 48 * k, scrY + ((K.PHONE.h - 28) * s * 0.1) / 2 + 6 * k];
-    const rowW = [scrX + sw - 90 * k, scrY + 190 * k + 2 * 112 * k];
-    add({ id: 'S03', at: st, cam: [540, 800], zoom: 0.08, note: 'tap gear, settings on "settings", Grid lines ON on "grid"',
+    const st = cut(2), open = Wd('open', 2) - st, sett = Wd('settings', 2) - st, gr = Wd('grid', 2) - st;
+    const s = 0.92, PW = K.PHONE.w * s, PH = K.PHONE.h * s, m = 14 * s, sw = PW - 2 * m, sh = PH - 2 * m;
+    const toWorld = (lx, ly) => [540 - PW / 2 + m + lx, 800 - PH / 2 + m + ly];
+    const dots = toWorld(sw * 830 / 923, sh * 1476 / 2000), gearP = toWorld(sw * 89 / 923, sh * 1476 / 2000);
+    add({ id: 'S03', at: st, cam: [540, 760], zoom: 0.07, note: 'tap ⁘ on "open", gear on "settings", Composition guide ON on "grid"',
       draw(lt, d, t) {
         K.studio(t);
+        let tg = null;
         K.phone(540, 800, s, 0, (w, h) => {
-          K.cameraApp(w, h, { t, subj: 0.5, gearHi: lt > tapT && lt < sett + 0.2 });
-          K.settings(w, h, seg(lt, sett, sett + 0.35), seg(lt, gr - 0.5, gr - 0.3), seg(lt, gr, gr + 0.2));
+          K.cameraApp(w, h, { t, subj: 0.5, quick: seg(lt, open + 0.1, open + 0.35), gearHi: lt > sett - 0.35 && lt < sett + 0.2 });
+          tg = K.settings(w, h, seg(lt, sett, sett + 0.35), seg(lt, gr - 0.6, gr - 0.35), seg(lt, gr, gr + 0.2));
         });
-        K.tap(gearW[0], gearW[1], seg(lt, tapT, tapT + 0.45), 0.9);
-        K.tap(rowW[0], rowW[1], seg(lt, gr - 0.08, gr + 0.4), 0.9);
-        if (lt > gr) K.pill('ON', 900, rowW[1], 54, C.teal, C.ink, eob(seg(lt, gr + 0.05, gr + 0.3)));
+        K.tap(dots[0], dots[1], seg(lt, open - 0.1, open + 0.35), 0.9);
+        K.tap(gearP[0], gearP[1], seg(lt, sett - 0.4, sett + 0.05), 0.9);
+        if (tg) { const [tx, ty] = toWorld(...tg.toggle); K.tap(tx, ty, seg(lt, gr - 0.08, gr + 0.4), 0.9);
+          if (lt > gr) K.pill('GRID LINES + LEVEL ON', 540, ty + 190, 44, C.teal, C.ink, eob(seg(lt, gr + 0.05, gr + 0.3))); }
       } });
-    cue(st, 'whoosh'); cue(st + tapT, 'tap'); cue(st + sett, 'slide', { dur: 0.35, gain: 0.7 }); cue(st + gr - 0.05, 'tap'); cue(st + gr + 0.05, 'pop');
+    cue(st, 'whoosh'); cue(st + open - 0.05, 'tap'); cue(st + sett - 0.35, 'tap'); cue(st + sett, 'slide', { dur: 0.35, gain: 0.7 }); cue(st + gr - 0.05, 'tap'); cue(st + gr + 0.05, 'pop');
   }
 
   // ── 3 · THIRDS: lines draw across on "across", down on "down", 1/3 labels on "thirds" ──
@@ -61,7 +62,7 @@ export function buildShots() {
     add({ id: 'S04', at: st, cam: [540, 750], zoom: 0.05, note: 'horizontal lines on "across", vertical on "down", 1/3 labels on "thirds"',
       draw(lt, d, t) {
         K.studio(t);
-        K.finder(t, { subj: 0.5 }, { over: (w, h) => {
+        K.photoFinder('tower', { cx: 0.62, cy: 0.5 }, { tag: seg(lt, 0.3, 0.6), over: (w, h) => {
           ctx.lineCap = 'round';
           for (const [col, lw] of [[C.ink, 16], [C.white, 9]]) {
             ctx.strokeStyle = col; ctx.lineWidth = lw;
@@ -130,8 +131,9 @@ export function buildShots() {
       draw(lt, d, t) {
         K.studio(t);
         const p = eio(seg(lt, shot + 0.15, shot + 0.75));
-        if (p <= 0) K.finder(t, { subj: 2 / 3 }, { grid: 1 });
-        else K.print(540, lerp(F.y + F.h / 2, 760, p), lerp(F.w, 740, p), lerp(F.h, 820, p), lerp(0, -0.06, p), 2 / 3, t);
+        if (p <= 0) K.photoFinder('lighthouse', { cy: 0.55 }, { grid: 1 });
+        else K.photoPrint(540, lerp(F.y + F.h / 2, 760, p), lerp(F.w, 740, p), lerp(F.h, 820, p), lerp(0, -0.06, p), 'lighthouse', { cy: 0.55 });
+        if (p >= 1) K.shotTag(880, 1135, seg(lt, shot + 0.8, shot + 1.1));
         K.check(850, 400, eob(seg(lt, bal - 0.05, bal + 0.25)) * 0.9);
         K.flash(lt > shot ? 0.85 * (1 - seg(lt, shot, shot + 0.3)) : 0);
       } });
@@ -144,10 +146,11 @@ export function buildShots() {
     add({ id: 'S09', at: st, cam: [540, 740], zoom: 0.05, note: 'three prints fan out, tag pill on "tag"',
       draw(lt, d, t) {
         K.studio(t);
-        [[-0.16, 300, 0.4], [0.14, 780, 0.75], [0, 540, 2 / 3]].forEach(([rot, x, subj], i) => {
+        [[-0.16, 300, 'boats', { cy: 0.7 }], [0.14, 780, 'tower', { cx: 0.7 }], [0, 540, 'couple', { cx: 0.55 }]].forEach(([rot, x, key, o], i) => {
           const p = eob(seg(lt, i * 0.15, i * 0.15 + 0.4)); if (p <= 0) return;
-          K.print(lerp(540, x, p), 720 + (i === 2 ? 0 : 40), 460, 540, rot * p, subj, t);
+          K.photoPrint(lerp(540, x, p), 720 + (i === 2 ? 0 : 40), 460, 540, rot * p, key, o);
         });
+        K.shotTag(880, 1030, seg(lt, 0.7, 1.0));
         K.pill(`TAG ${K.HANDLE}`, 540, 1130, 56, C.yellow, C.ink, eob(seg(lt, tag, tag + 0.25)));
       } });
     cue(st, 'whoosh'); [0, 1, 2].forEach((i) => cue(st + i * 0.15, 'slide', { dur: 0.3, gain: 0.4 })); cue(st + tag, 'pop');
