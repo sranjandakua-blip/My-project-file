@@ -4,3 +4,7 @@
 brand/photos/
 */assets/photos/
 */renders/
+brand/screens/
+carousels/out/
+carousels/*.zip
+phone-photo-school/carousels/carousels-preview.jpg
