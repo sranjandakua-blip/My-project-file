@@ -4,6 +4,7 @@ import { W, H, setCtx, ctx, clamp, eo, eio } from './core/lib.js';
 import { T, loadTiming } from './core/timing.js';
 import { buildCaptions, drawCaption, captionList } from './core/captions.js';
 import { buildShots } from './shots.js';
+import { loadAssets } from './core/kit.js';
 
 const cv = document.getElementById('cv');
 setCtx(cv.getContext('2d'));
@@ -36,6 +37,7 @@ function draw(t) {
     await document.fonts.load('900 100px Inter');
     const script = await (await fetch('script.json', { cache: 'no-store' })).json();
     await loadTiming();
+    await loadAssets();
     buildCaptions(script);
     const { shots, cues, overlay } = buildShots();
     shots.sort((a, b) => a.at - b.at);

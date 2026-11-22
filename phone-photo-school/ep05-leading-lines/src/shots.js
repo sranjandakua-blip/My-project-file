@@ -191,6 +191,6 @@ export function buildShots() {
     cue(st, 'whoosh'); cue(Wd('follow', 9), 'pop'); cue(Wd('six', 9), 'pop', { gain: 0.6 });
   }
 
-  const overlay = (t) => K.seriesBadge(LESSON, seg(t, 0.15, 0.55));
+  const overlay = (t) => K.seriesBadge(LESSON, seg(t, 0.15, 0.55), t);
   return { shots: S, cues: CUES, overlay };
 }

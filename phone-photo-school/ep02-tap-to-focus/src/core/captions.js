@@ -33,7 +33,7 @@ export function buildCaptions(script) {
   });
   caps.forEach((c, k) => {
     const next = caps[k + 1], lineEnd = T.lines[c.line].end;
-    c.e = next ? (next.s - lineEnd > 0.7 && next.line !== c.line ? lineEnd + 0.35 : next.s) : T.dur;
+    c.e = next ? (next.s - lineEnd > 0.7 && next.line !== c.line ? lineEnd + 0.35 : next.s) : Math.min(T.dur, lineEnd + 1.2);   // last caption clears before the logo sting
   });
   return caps;
 }
