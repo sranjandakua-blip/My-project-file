@@ -1,0 +1,52 @@
+{
+  "series": "Phone Photo School",
+  "episode": 8,
+  "title": "Lesson 08: Night Mode",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 3.0,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Samsung Camera: in low light a moon icon with a number appears in Photo mode (creator's own screenshot); the phone must be held still while the night capture completes"
+  ],
+  "lines": [
+    {
+      "text": "Night photos coming out dark and grainy?",
+      "caps": "DARK AND *GRAINY?"
+    },
+    {
+      "text": "Lesson eight: night mode.",
+      "caps": "LESSON *EIGHT | NIGHT *MODE"
+    },
+    {
+      "text": "In low light, look for the little moon icon.",
+      "caps": "LOOK FOR THE *MOON"
+    },
+    {
+      "text": "That number is how many seconds it needs.",
+      "caps": "THE NUMBER = *SECONDS"
+    },
+    {
+      "text": "Tap it, then hold perfectly still until it finishes.",
+      "caps": "TAP IT | HOLD *STILL"
+    },
+    {
+      "text": "Brace your elbows, or rest the phone on something solid.",
+      "caps": "BRACE YOUR *ELBOWS | REST IT ON *SOMETHING"
+    },
+    {
+      "text": "Stick to one x, the main camera gathers the most light.",
+      "caps": "STICK TO *1X | MOST *LIGHT"
+    },
+    {
+      "text": "Your night shots come out bright, clean, and sharp.",
+      "caps": "BRIGHT, *CLEAN, | AND *SHARP"
+    },
+    {
+      "text": "Follow for lesson nine!",
+      "caps": "*FOLLOW | FOR LESSON *NINE"
+    }
+  ]
+}

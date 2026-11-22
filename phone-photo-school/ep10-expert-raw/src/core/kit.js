@@ -1,0 +1,790 @@
+// Phone Photo School component kit: flat 2D shapes, two tones per object, teal = camera UI, yellow = the one key thing,
+// red = wrong, green = right. Every component is a pure function of its arguments (no state between frames).
+import { ctx, setCtx, C, W, H, TAU, clamp, lerp, seg, eo, eob, rr, circle, ell, line } from './lib.js';
+import { T } from './timing.js';
+
+// brand images (assets/), loaded once by main.js before the first frame
+export const IMG = {};
+// the creator's own S26 Ultra photos (assets/photos/<key>.jpg)
+export const PHOTOS = ['geese', 'couple', 'boats', 'courtyard', 'lobby', 'beam', 'lighthouse', 'arches', 'tower', 'sunset', 'kittens', 'templeNight', 'templeTop',
+  'gate', 'valley', 'mural', 'stupa', 'cloudVillage', 'roof', 'stairs', 'clock', 'stadium', 'winding', 'kanch', 'shiva', 'gopuram', 'snow', 'church', 'pyramids', 'houses'];
+export async function loadAssets() {
+  const load = (k, f) => new Promise((res) => { const i = new Image(); i.onload = () => { IMG[k] = i; res(); }; i.onerror = () => res(); i.src = f; });
+  await Promise.all([load('mark', 'assets/logo-mark.png'), load('full', 'assets/logo-full.png'),
+    ...PHOTOS.map((k) => load(k, `assets/photos/${k}.jpg`))]);
+}
+/** the closing logo sting: starts this many seconds before the end */
+export const STING = 1.9;
+const stingP = () => (t) => seg(t, T.dur - STING, T.dur - STING + 0.35);
+
+// ---------- backgrounds ----------
+/** night-studio background: flat fill, soft dot grid, a big faint aperture turning in the corner */
+export function studio(t, accent = C.panel) {
+  ctx.fillStyle = C.bg; ctx.fillRect(-300, -300, W + 600, H + 600);
+  ctx.fillStyle = C.bg2;
+  for (let y = -60; y < H + 60; y += 72) for (let x = -60; x < W + 60; x += 72) { ctx.beginPath(); ctx.arc(x + ((y / 72) % 2) * 36, y, 4, 0, TAU); ctx.fill(); }
+  aperture(930, 1720, 420, 0.55, t * 0.15, accent);
+  aperture(120, 180, 260, 0.6, -t * 0.12, accent);
+}
+
+/** 6-blade aperture icon (the series motif). open 0..1 */
+export function aperture(x, y, r, open, rot, color) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.lineWidth = r * 0.08; ctx.strokeStyle = color; ctx.stroke();
+  const ir = r * lerp(0.12, 0.62, open);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * TAU, b = a + TAU / 6;
+    ctx.beginPath(); ctx.moveTo(Math.cos(a) * ir, Math.sin(a) * ir); ctx.lineTo(Math.cos(a + 0.9) * r * 0.9, Math.sin(a + 0.9) * r * 0.9);
+    ctx.lineTo(Math.cos(b) * ir, Math.sin(b) * ir); ctx.closePath(); ctx.fillStyle = color; ctx.globalAlpha *= 0.6; ctx.fill(); ctx.globalAlpha /= 0.6;
+  }
+  ctx.restore();
+}
+
+// ---------- the photo scene ----------
+/** a flat landscape in local box (0,0,w,h). Options:
+ *  subj (0..1 tree x) · treeY (base, 0..1 of h, default .8) · treeS (size mult) · t (cloud drift) · sunX
+ *  zoom + zx/zy (view centre, 0..1): crop into the scene like a longer lens · blur (px, background) · bright (1 = normal exposure)
+ *  flower {x, y, s, blur}: a foreground flower (own blur) · haze 0..1: greasy-lens glow · person {x, y, s} · balloon {x, y, s}
+ *  road {vx}: a road running to the vanishing point x = vx (0..1, may be off-frame) */
+export function scene(w, h, o = {}) {
+  const { subj = 0.5, t = 0, zoom = 1, blur = 0, bright = 1, haze = 0 } = o;
+  const hz = h * (o.hz ?? 0.64), dy = hz - h * 0.64;            // o.hz moves the horizon (0..1)
+  // o.light: 'golden' (low warm sun, long shadows) · 'noon' (high white sun, hard short shadows) · default daylight
+  const G = o.light === 'golden', N = o.light === 'noon';
+  const P = G ? { sky: '#F0A35E', skyLow: '#F8D08A', sun: '#FFE9A8', far: '#B98AA0', near: '#8E6C8E', ground: '#A9A35A', groundDark: '#8F8A48' }
+              : N ? { sky: '#A8DDF7', skyLow: '#D6F0FB', sun: '#FFFDF0', far: C.mtnFar, near: C.mtnNear, ground: '#5CC07F', groundDark: '#47A768' }
+              : { sky: C.sky, skyLow: C.skyLow, sun: C.sun, far: C.mtnFar, near: C.mtnNear, ground: C.ground, groundDark: C.groundDark };
+  const sunX = o.sunX ?? (G ? 0.72 : N ? 0.5 : 0.3), sunY = o.sunY ?? (G ? 0.56 : N ? 0.09 : 0.27);
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
+  const f = []; if (blur > 0.2) f.push(`blur(${blur}px)`); if (bright !== 1) f.push(`brightness(${bright})`); if (haze > 0) f.push(`blur(${haze * 5}px)`, `contrast(${1 - haze * 0.3})`);
+  if (f.length) ctx.filter = f.join(' ');
+  if (zoom !== 1) {
+    const half = 0.5 / zoom, cx = clamp(o.zx ?? 0.5, half, 1 - half), cy = clamp(o.zy ?? 0.5, half, 1 - half);
+    ctx.translate(w / 2, h / 2); ctx.scale(zoom, zoom); ctx.translate(-cx * w, -cy * h);
+  }
+  ctx.fillStyle = P.sky; ctx.fillRect(0, 0, w, hz);
+  ctx.fillStyle = P.skyLow; ctx.fillRect(0, hz * 0.62, w, hz * 0.38);
+  if (G) { ctx.save(); ctx.globalAlpha = 0.35; circle(w * sunX, h * sunY + dy, w * 0.16, '#FFD98A'); ctx.restore(); }
+  circle(w * sunX, h * sunY + dy, w * (N ? 0.06 : 0.085), P.sun);
+  for (let i = 0; i < 2; i++) {
+    const cx = ((w * (0.25 + i * 0.5) + t * 18 * (i + 1)) % (w * 1.3)) - w * 0.15, cy = h * (0.12 + i * 0.1), s = w * 0.05;
+    ctx.fillStyle = C.white; ctx.beginPath();
+    ctx.arc(cx, cy, s, 0, TAU); ctx.arc(cx + s * 1.1, cy - s * 0.4, s * 1.2, 0, TAU); ctx.arc(cx + s * 2.2, cy, s * 0.9, 0, TAU); ctx.fill();
+    ctx.fillRect(cx, cy, s * 2.2, s * 0.9);
+  }
+  if (o.balloon) balloon(o.balloon.x * w, o.balloon.y * h + Math.sin(t * 1.5) * h * 0.004, o.balloon.s * w);
+  const ridge = (pts, col) => { ctx.beginPath(); ctx.moveTo(0, hz); pts.forEach(([a, b]) => ctx.lineTo(a * w, b * h + dy)); ctx.lineTo(w, hz); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); };
+  ridge([[0, 0.5], [0.18, 0.38], [0.34, 0.5], [0.52, 0.33], [0.72, 0.48], [0.88, 0.4], [1, 0.47]], P.far);
+  ridge([[0, 0.58], [0.22, 0.47], [0.4, 0.6], [0.62, 0.5], [0.82, 0.6], [1, 0.54]], P.near);
+  ctx.fillStyle = P.ground; ctx.fillRect(0, hz, w, h - hz);
+  ctx.fillStyle = P.groundDark; ctx.fillRect(0, hz + (h - hz) * 0.55, w, h);
+  const shadow = (x, y, len) => {                                  // cast shadows: long and away from a low sun, short at noon
+    ctx.save(); ctx.globalAlpha = G ? 0.28 : 0.4; ctx.fillStyle = '#2A2238';
+    const dir = sunX > 0.5 ? -1 : 1, L = G ? len * 2.6 : N ? len * 0.35 : len * 0.6;
+    ctx.beginPath(); ctx.ellipse(x + dir * L / 2, y, L / 2 + w * 0.02, h * 0.018, 0, 0, TAU); ctx.fill(); ctx.restore(); };
+  if (o.light) { shadow(subj * w, h * (o.treeY ?? 0.8), h * 0.2 * (o.treeS ?? 1)); if (o.person) shadow(o.person.x * w, o.person.y * h, o.person.s * h * 0.8); }
+  if (o.road) road(w, h, hz, o.road.vx, o.road.spread ?? 0);
+  tree(subj * w, h * (o.treeY ?? 0.8), h * 0.0011 * (o.treeS ?? 1));
+  if (o.person && !o.personSharp) drawPerson(o.person, w, h);
+  ctx.filter = 'none';
+  if (o.person && o.personSharp) drawPerson(o.person, w, h);
+  if (o.flower) { const fl = o.flower; if (fl.blur > 0.2) ctx.filter = `blur(${fl.blur}px)${bright !== 1 ? ` brightness(${bright})` : ''}`; else if (bright !== 1) ctx.filter = `brightness(${bright})`;
+    flower(fl.x * w, fl.y * h, fl.s * h); ctx.filter = 'none'; }
+  if (haze > 0) {                                                  // greasy lens: milky veil + blooming sun
+    ctx.globalAlpha = 0.28 * haze; ctx.fillStyle = '#FFF6E0'; ctx.fillRect(0, 0, w, h);
+    for (let i = 1; i <= 4; i++) { ctx.globalAlpha = 0.16 * haze; circle(w * sunX, h * 0.27, w * 0.085 * (1 + i * 0.6), '#FFF1C2'); }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+/** person with optional rim light (rim 0..1, warm glow around the edges) or silhouette (sil 0..1) */
+function drawPerson(pp, w, h) {
+  const prev = ctx.filter;
+  if (pp.sil > 0) ctx.filter = `${prev === 'none' ? '' : prev} brightness(${lerp(1, 0.08, pp.sil)})`.trim();
+  if (pp.rim > 0) ctx.filter = `${ctx.filter === 'none' ? '' : ctx.filter} drop-shadow(0 0 ${6 + 10 * pp.rim}px rgba(255,214,120,${pp.rim})) drop-shadow(0 0 ${14 + 26 * pp.rim}px rgba(255,170,70,${0.9 * pp.rim}))`.trim();
+  person(pp.x * w, pp.y * h, pp.s * h); ctx.filter = prev;
+}
+/** a road from the bottom of the frame to the vanishing point x = vx*w on the horizon */
+export function road(w, h, hz, vx, spread = 0) {
+  const ax = vx * w, ay = hz + h * 0.005, bl = w * (0.12 - spread), br = w * (0.98 + spread);
+  ctx.fillStyle = '#5C6478'; ctx.beginPath(); ctx.moveTo(bl, h); ctx.lineTo(ax - w * 0.006, ay); ctx.lineTo(ax + w * 0.006, ay); ctx.lineTo(br, h); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#6E778C'; ctx.beginPath(); ctx.moveTo(bl, h); ctx.lineTo(ax - w * 0.006, ay); ctx.lineTo(ax, ay); ctx.lineTo((bl + br) / 2, h); ctx.closePath(); ctx.fill();
+  const mx = (bl + br) / 2;                                        // centre dashes, shrinking with distance
+  for (let i = 0; i < 9; i++) {
+    const u0 = Math.pow(i / 9, 1.6), u1 = Math.pow((i + 0.5) / 9, 1.6);
+    const p = (u) => [lerp(mx, ax, u), lerp(h, ay, u)], [x0, y0] = p(u0), [x1, y1] = p(u1);
+    ctx.strokeStyle = C.yellow; ctx.lineWidth = lerp(w * 0.018, w * 0.002, u0); ctx.lineCap = 'butt'; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  }
+}
+export const roadEdges = (w, h, vx, spread = 0, hzF = 0.64) => { const hz = h * hzF; return [[[w * (0.12 - spread), h], [vx * w, hz]], [[w * (0.98 + spread), h], [vx * w, hz]]]; };
+
+/** a foreground flower (stem + petals), base at (x, y), s ≈ height */
+export function flower(x, y, s) {
+  line([[x, y], [x + s * 0.03, y - s * 0.55], [x, y - s * 0.8]], '#2E8B4E', s * 0.05);
+  ell(x + s * 0.12, y - s * 0.45, s * 0.12, s * 0.05, '#3FA45E', -0.5);
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * TAU; ell(x + Math.cos(a) * s * 0.13, y - s * 0.8 + Math.sin(a) * s * 0.13, s * 0.12, s * 0.075, i % 2 ? '#FF7A93' : '#FF5C7A', a); }
+  circle(x, y - s * 0.8, s * 0.09, C.yellow); circle(x - s * 0.025, y - s * 0.82, s * 0.03, '#FFE28A');
+}
+
+/** a simple standing person, feet at (x, y), s ≈ height */
+export function person(x, y, s) {
+  ell(x, y, s * 0.16, s * 0.025, 'rgba(0,0,0,0.2)');
+  ctx.fillStyle = '#2B3A5C'; rr(x - s * 0.09, y - s * 0.42, s * 0.18, s * 0.42, s * 0.03); ctx.fill();   // legs
+  ctx.fillStyle = '#E2574C'; rr(x - s * 0.13, y - s * 0.75, s * 0.26, s * 0.38, s * 0.08); ctx.fill();   // jacket
+  ctx.fillStyle = '#C94238'; rr(x - s * 0.13, y - s * 0.75, s * 0.07, s * 0.38, s * 0.04); ctx.fill();
+  circle(x, y - s * 0.86, s * 0.11, '#E8B89A');                                                           // head
+  ctx.fillStyle = '#3B2A20'; ctx.beginPath(); ctx.arc(x, y - s * 0.88, s * 0.115, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+  circle(x - s * 0.04, y - s * 0.85, s * 0.012, C.ink); circle(x + s * 0.04, y - s * 0.85, s * 0.012, C.ink);
+  ctx.strokeStyle = C.ink; ctx.lineWidth = s * 0.01; ctx.beginPath(); ctx.arc(x, y - s * 0.81, s * 0.035, 0.3, Math.PI - 0.3); ctx.stroke();
+}
+
+/** a hot-air balloon (a far-away detail), centre (x, y), s = radius */
+export function balloon(x, y, s) {
+  ctx.fillStyle = '#E2574C'; ctx.beginPath(); ctx.ellipse(x, y, s, s * 1.15, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.ellipse(x, y, s * 0.42, s * 1.15, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#E2574C'; ctx.beginPath(); ctx.ellipse(x, y, s * 0.12, s * 1.15, 0, 0, TAU); ctx.fill();
+  line([[x - s * 0.5, y + s * 1.0], [x - s * 0.25, y + s * 1.55]], C.ink, s * 0.05); line([[x + s * 0.5, y + s * 1.0], [x + s * 0.25, y + s * 1.55]], C.ink, s * 0.05);
+  ctx.fillStyle = C.trunk; rr(x - s * 0.28, y + s * 1.5, s * 0.56, s * 0.4, s * 0.06); ctx.fill();
+}
+
+/** the subject: a lone round tree, base at (x, y) */
+export function tree(x, y, s) {
+  if (s <= 0) return;
+  ell(x, y + 6 * s, 90 * s, 16 * s, 'rgba(0,0,0,0.18)');
+  ctx.fillStyle = C.trunk; rr(x - 16 * s, y - 150 * s, 32 * s, 156 * s, 10 * s); ctx.fill();
+  circle(x, y - 230 * s, 125 * s, C.leafDark);
+  circle(x - 20 * s, y - 248 * s, 104 * s, C.leaf);
+  circle(x + 52 * s, y - 280 * s, 30 * s, '#5BCB8A');
+}
+
+// ---------- phone + camera app ----------
+export const PHONE = { w: 500, h: 1040 };
+/** a flat phone (front), centred at (x, y). drawScreen(w, h) draws in screen-local coords, already clipped. */
+export function phone(x, y, s, rot, drawScreen) {
+  const w = PHONE.w * s, h = PHONE.h * s;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ell(0, h * 0.53, w * 0.42, h * 0.025, 'rgba(0,0,0,0.35)');                       // contact shadow
+  ctx.fillStyle = C.phoneEdge; rr(-w / 2 - 6 * s, -h / 2 - 6 * s, w + 12 * s, h + 12 * s, 40 * s); ctx.fill();
+  ctx.fillStyle = C.phoneEdgeHi; rr(w / 2 + 4 * s, -h * 0.26, 8 * s, 120 * s, 4 * s); ctx.fill();   // side keys
+  ctx.fillStyle = C.phone; rr(-w / 2, -h / 2, w, h, 34 * s); ctx.fill();            // squared-off "ultra" corners
+  const m = 14 * s, sw = w - 2 * m, sh = h - 2 * m;
+  ctx.save(); ctx.translate(-w / 2 + m, -h / 2 + m); rr(0, 0, sw, sh, 24 * s); ctx.clip();
+  drawScreen(sw, sh);
+  ctx.restore();
+  circle(0, -h / 2 + m + 26 * s, 9 * s, '#000');                                     // punch-hole camera
+  ctx.restore();
+}
+
+// The camera app, drawn from the creator's own One UI screenshots (positions are fractions of a 923 x 2000 screen).
+const CAM_ZOOM = [['.6', 234], ['1', 307], ['2', 387], ['3', 461], ['5', 538], ['10', 616], ['100', 690]];
+const _zoomKey = (z) => String(z ?? '1').replace(/[x×]/g, '');
+/** the viewfinder rect inside a screen of size (w, h): 3:4, under the top icon row */
+export const viewfinder = (w, h) => ({ x: 0, y: h * 158 / 2000, w, h: w * 4 / 3 });
+/** camera app screen. o: { t, subj, scene, photo, photoOpts, grid (0..1 lines drawn in), press, quick (0..1 quick-settings bar),
+ *  gearHi, zoomSel ('.6','1','2','3','5','10','100'), over(vw, vh, k) draws on the viewfinder } */
+export function cameraApp(w, h, o = {}) {
+  const X = (x) => x / 923 * w, Y = (y) => y / 2000 * h, k = w / 472, v = viewfinder(w, h);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+  ctx.save(); ctx.translate(v.x, v.y); ctx.beginPath(); ctx.rect(0, 0, v.w, v.h); ctx.clip();
+  if (o.photo) photo(o.photo, v.w, v.h, o.photoOpts || {}); else scene(v.w, v.h, { subj: o.subj ?? 0.5, t: o.t ?? 0, ...(o.scene || {}) });
+  if (o.grid) grid(0, 0, v.w, v.h, o.grid, X(2.5), 'rgba(255,255,255,0.75)');
+  if (o.reticle !== false) {                                         // the level / focus reticle
+    const cx = v.w / 2, cy = Y(773) - v.y, r = X(76);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = X(3);
+    ctx.beginPath(); ctx.arc(cx, cy, r, -1.3, 1.3); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI - 1.3, Math.PI + 1.3); ctx.stroke();
+    line([[cx - X(106), cy], [cx - X(64), cy]], 'rgba(255,255,255,0.85)', X(3)); line([[cx + X(64), cy], [cx + X(106), cy]], 'rgba(255,255,255,0.85)', X(3));
+    line([[cx - X(20), cy], [cx + X(20), cy]], 'rgba(255,255,255,0.85)', X(3)); line([[cx, cy - X(20)], [cx, cy + X(20)]], 'rgba(255,255,255,0.85)', X(3));
+  }
+  if (o.over) o.over(v.w, v.h, k);
+  ctx.restore();
+  // top icon row: flash off · 12M · motion photo · filters · smile (yellow)
+  const ty = Y(112), ic = 'rgba(255,255,255,0.95)';
+  ctx.strokeStyle = ic; ctx.lineWidth = X(4); ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(X(530), ty - X(22)); ctx.lineTo(X(512), ty + X(2)); ctx.lineTo(X(530), ty + X(2)); ctx.lineTo(X(514), ty + X(24)); ctx.stroke();
+  line([[X(505), ty - X(20)], [X(540), ty + X(20)]], ic, X(3.5));
+  ctx.font = `700 ${X(30)}px Inter`; ctx.fillStyle = o.resHi ? C.yellow : ic; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(o.resSel ?? '12M', X(603), ty + X(1));
+  if (o.resHi) { ctx.save(); ctx.strokeStyle = C.yellow; ctx.lineWidth = X(3); rr(X(560), ty - X(26), X(86), X(52), X(14)); ctx.stroke(); ctx.restore(); }
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)'; rr(X(667), ty - X(20), X(40), X(40), X(10)); ctx.stroke(); line([[X(670), ty - X(18)], [X(704), ty + X(18)]], 'rgba(255,255,255,0.55)', X(3));
+  for (const [dx, dy] of [[-8, 4], [6, -6], [8, 8]]) { ctx.beginPath(); ctx.arc(X(767 + dx), ty + X(dy), X(12), 0, TAU); ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.stroke(); }
+  ctx.strokeStyle = C.yellow; ctx.beginPath(); ctx.arc(X(849), ty, X(20), 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(X(849), ty + X(2), X(10), 0.3, Math.PI - 0.3); ctx.stroke(); circle(X(842), ty - X(6), X(2.5), C.yellow); circle(X(856), ty - X(6), X(2.5), C.yellow);
+  // zoom pill (or the quick-settings bar sliding in over it)
+  const q = clamp(o.quick ?? 0), zy = Y(1476), sel = _zoomKey(o.zoomSel), PORT = o.mode === 'PORTRAIT', rp = clamp(o.res ?? 0);
+  if (o.moon != null) {                                              // night-mode moon + seconds (bottom-right of the viewfinder)
+    const mx = X(820), my = Y(1320), hl = o.moonHi ?? 0;
+    if (hl > 0) { ctx.save(); ctx.globalAlpha = hl * 0.35; circle(mx + X(8), my, X(52), C.yellow); ctx.restore(); }
+    ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(mx, my, X(18), 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.9)'; ctx.beginPath(); ctx.arc(mx + X(9), my - X(7), X(16), 0, TAU); ctx.fill();
+    ctx.fillStyle = C.yellow; ctx.font = `700 ${X(34)}px Inter`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(o.moon), mx + X(32), my + X(1));
+  }
+  if (o.ready > 0) { ctx.save(); ctx.globalAlpha = o.ready; ctx.fillStyle = 'rgba(20,20,20,0.85)'; rr(X(390), Y(197), X(142), Y(62), X(14)); ctx.fill();
+    ctx.fillStyle = C.yellow; ctx.font = `600 ${X(30)}px Inter`; ctx.fillText('Ready', X(461), Y(228)); ctx.restore(); }
+  if (rp > 0) {                                                      // resolution picker: 200M · 50M · 12M
+    ctx.save(); ctx.globalAlpha = rp; ctx.fillStyle = '#2A2A2C'; rr(X(220), Y(1417), X(482), Y(116), Y(58)); ctx.fill();
+    for (const [r, rx] of [['200M', 328], ['50M', 461], ['12M', 595]]) { ctx.fillStyle = r === (o.resSel ?? '12M') ? C.yellow : C.white; ctx.font = `700 ${X(31)}px Inter`; ctx.fillText(r, X(rx), zy + X(1)); }
+    ctx.restore();
+  }
+  if (PORT && q < 1 && rp < 1) {                                     // Portrait: effect button · 1 2 3 5 · ⁘
+    ctx.save(); ctx.globalAlpha = 1 - Math.max(q, rp);
+    ctx.strokeStyle = C.yellow; ctx.lineWidth = X(4); ctx.beginPath(); ctx.arc(X(87), zy, X(40), 0, TAU); ctx.stroke(); circle(X(87), zy, X(16), C.white);
+    ctx.fillStyle = 'rgba(42,42,44,0.92)'; rr(X(303), Y(1433), X(317), Y(85), Y(42)); ctx.fill();
+    for (const [z, zx] of [['1', 348], ['2', 423], ['3', 497], ['5', 577]]) { const on = z === (o.portraitZoom ?? '5'); if (on) circle(X(zx), zy, X(38), '#55555A');
+      ctx.fillStyle = C.white; ctx.font = `700 ${X(on ? 32 : 29)}px Inter`; ctx.fillText(on ? `${z}×` : z, X(zx), zy + X(1)); }
+    circle(X(830), zy, X(40), 'rgba(42,42,44,0.92)'); for (const [dx, dy] of [[-9, -9], [9, -9], [-9, 9], [9, 9]]) circle(X(830 + dx), zy + X(dy), X(5), C.white);
+    ctx.restore();
+  }
+  if (q < 1 && !PORT && rp < 1) {
+    ctx.save(); ctx.globalAlpha = 1 - q;
+    ctx.fillStyle = 'rgba(42,42,44,0.92)'; rr(X(188), Y(1433), X(547), Y(85), Y(42)); ctx.fill();
+    for (const [z, zx] of CAM_ZOOM) {
+      const on = z === sel; if (on) circle(X(zx), zy, X(38), '#55555A');
+      ctx.fillStyle = C.white; ctx.font = `700 ${X(on ? 32 : 29)}px Inter`; ctx.fillText(on ? `${z}×` : z, X(zx), zy + X(1));
+    }
+    circle(X(830), zy, X(40), 'rgba(42,42,44,0.92)');
+    for (const [dx, dy] of [[-9, -9], [9, -9], [-9, 9], [9, 9]]) circle(X(830 + dx), zy + X(dy), X(5), C.white);
+    ctx.restore();
+  }
+  if (q > 0) {
+    ctx.save(); ctx.globalAlpha = q; ctx.translate(0, lerp(X(30), 0, eo(q)));
+    ctx.fillStyle = '#2A2A2C'; rr(X(32), Y(1417), X(859), Y(116), Y(58)); ctx.fill();
+    gear(X(89), zy, X(20), o.gearHi ? C.yellow : C.white, 0);
+    ctx.strokeStyle = C.white; ctx.lineWidth = X(4);
+    ctx.beginPath(); ctx.moveTo(X(213), zy - X(22)); ctx.lineTo(X(195), zy + X(2)); ctx.lineTo(X(213), zy + X(2)); ctx.lineTo(X(197), zy + X(24)); ctx.stroke();
+    line([[X(188), zy - X(20)], [X(223), zy + X(20)]], C.white, X(3.5));
+    ctx.beginPath(); ctx.arc(X(320), zy + X(2), X(21), 0, TAU); ctx.stroke(); line([[X(320), zy + X(2)], [X(330), zy - X(8)]], C.white, X(3.5));
+    ctx.fillStyle = C.white; ctx.font = `700 ${X(30)}px Inter`; ctx.fillText('3:4', X(436), zy + X(1)); ctx.fillText('12M', X(551), zy + X(1));
+    ctx.beginPath(); ctx.arc(X(666), zy, X(21), 0, TAU); ctx.stroke(); line([[X(652), zy + X(12)], [X(680), zy - X(12)]], C.white, X(3));
+    circle(X(833), zy, X(30), '#3A3A3C'); line([[X(822), zy - X(11)], [X(844), zy + X(11)]], C.white, X(4)); line([[X(844), zy - X(11)], [X(822), zy + X(11)]], C.white, X(4));
+    ctx.restore();
+  }
+  // gallery thumb · shutter · switch camera
+  const by = Y(1663);
+  ctx.save(); ctx.beginPath(); ctx.arc(X(148), by, X(60), 0, TAU); ctx.clip();
+  if (IMG.geese) { ctx.translate(X(88), by - X(60)); photo('geese', X(120), X(120), { cx: 0.55, cy: 0.5 }); } else { ctx.fillStyle = '#3A3A3C'; ctx.fillRect(X(88), by - X(60), X(120), X(120)); }
+  ctx.restore();
+  circle(X(461), by, X(82) * (1 - 0.1 * (o.press ?? 0)), '#F8F6F0');
+  circle(X(773), by, X(61), '#2A2A2C');
+  ctx.strokeStyle = C.white; ctx.lineWidth = X(4); ctx.beginPath(); ctx.arc(X(773), by, X(26), 3.6, 5.9); ctx.stroke(); ctx.beginPath(); ctx.arc(X(773), by, X(26), 0.5, 2.8); ctx.stroke();
+  // modes
+  ctx.font = `700 ${X(31)}px Inter`;
+  const modes = PORT ? [['PORTRAIT', 461], ['PHOTO', 653], ['VIDEO', 818]] : [['PORTRAIT', 268], ['PHOTO', 461], ['VIDEO', 625], ['MORE', 782]];
+  modes.forEach(([m, mx]) => { ctx.fillStyle = m === (PORT ? 'PORTRAIT' : 'PHOTO') ? C.white : '#8E8E93'; ctx.fillText(m, X(mx), Y(1845)); });
+}
+
+/** One UI "Camera settings" (dark), sliding in from the right (p 0..1). The "Composition guide" row highlights (hl 0..1)
+ *  and its switch turns on (on 0..1). Returns { toggle: [x, y] } in screen-local coords, or null while hidden. */
+export function settings(w, h, p, hl, on) {
+  if (p <= 0) return null;
+  const X = (x) => x / 624 * w, Y = (y) => y / 1999 * h, x0 = (1 - eo(p)) * w;
+  ctx.save(); ctx.translate(x0, 0);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+  line([[X(64), Y(100)], [X(50), Y(120)], [X(64), Y(140)]], C.white, X(4));
+  ctx.fillStyle = C.white; ctx.font = `700 ${X(34)}px Inter`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('Camera settings', X(98), Y(120));
+  const card = (y0, y1) => { ctx.fillStyle = '#1C1C1E'; rr(X(17), Y(y0), X(590), Y(y1 - y0), X(34)); ctx.fill(); };
+  const label = (t, y) => { ctx.fillStyle = '#8E8E93'; ctx.font = `600 ${X(21)}px Inter`; ctx.fillText(t, X(46), Y(y)); };
+  const row = (t, y, sub) => { ctx.fillStyle = C.white; ctx.font = `500 ${X(27)}px Inter`; ctx.fillText(t, X(46), Y(y)); if (sub) { ctx.fillStyle = '#4C8DF6'; ctx.font = `500 ${X(20)}px Inter`; ctx.fillText(sub, X(46), Y(y + 34)); } };
+  const div = (y) => { ctx.fillStyle = '#2C2C2E'; ctx.fillRect(X(42), Y(y), X(540), Math.max(1, Y(2))); };
+  label('Photos', 240); card(268, 540);
+  row('Photo format', 310, 'HEIF'); div(375); row('Watermark', 420); toggle(X(545), Y(420), X(0.58), 0, false, true); div(465); row('Motion photos', 505);
+  label('General', 610); card(638, 1000);
+  row('Tracking auto focus', 685); toggle(X(545), Y(685), X(0.58), 0, false, true); div(730);
+  if (hl > 0) { ctx.save(); ctx.globalAlpha = hl; ctx.strokeStyle = C.yellow; ctx.lineWidth = X(4); rr(X(24), Y(738), X(576), Y(108), X(20)); ctx.stroke(); ctx.restore(); }
+  row('Composition guide', 772, 'Grid lines and level'); toggle(X(545), Y(790), X(0.58), on, false, true); div(850);
+  row('Location tags', 895); toggle(X(545), Y(895), X(0.58), 1, false, true); div(940);
+  row('Save selfies as previewed', 970); toggle(X(545), Y(970), X(0.58), 1, false, true);
+  card(1060, 1180); row('Camera Assistant', 1120);
+  ctx.restore();
+  return { toggle: [x0 + X(545), Y(790)] };
+}
+
+/** a switch, on 0..1 (animated), dim = greyed */
+export function toggle(x, y, k, on, dim = false, oneui = false) {
+  if (oneui) {                                                       // One UI switch: blue track when on, white knob
+    const w = 84 * k, h = 46 * k;
+    ctx.fillStyle = on > 0.5 ? '#3E7BF6' : '#5B5B60'; rr(x - w / 2, y - h / 2, w, h, h / 2); ctx.fill();
+    circle(x - w / 2 + h / 2 + (w - h) * eo(clamp(on)), y, h * 0.38, C.white); return;
+  }
+  const w = 84 * k, h = 46 * k;
+  ctx.fillStyle = dim ? (on ? '#3D6E8F' : '#3A4150') : on > 0.5 ? C.teal : '#4A5263';
+  rr(x - w / 2, y - h / 2, w, h, h / 2); ctx.fill();
+  circle(x - w / 2 + h / 2 + (w - h) * eo(clamp(on)), y, h * 0.38, dim ? '#C9CED8' : C.white);
+}
+
+/** settings gear icon */
+export function gear(x, y, r, color, rot = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = color;
+  for (let i = 0; i < 8; i++) { ctx.save(); ctx.rotate((i / 8) * TAU); ctx.fillRect(-r * 0.22, -r * 1.15, r * 0.44, r * 0.5); ctx.restore(); }
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.85, 0, TAU); ctx.fill();
+  circle(0, 0, r * 0.36, '#000');
+  ctx.restore();
+}
+
+// ---------- composition graphics ----------
+/** rule-of-thirds grid inside (x, y, w, h); p 0..1 draws the lines in */
+export function grid(x, y, w, h, p, lw, color) {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round';
+  for (let i = 1; i <= 2; i++) {
+    const q = eo(seg(p, (i - 1) * 0.2, 0.6 + (i - 1) * 0.2));
+    ctx.beginPath(); ctx.moveTo(x + (w * i) / 3, y); ctx.lineTo(x + (w * i) / 3, y + h * q); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y + (h * i) / 3); ctx.lineTo(x + w * q, y + (h * i) / 3); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** a glowing "power point" where two grid lines cross */
+export function hotspot(x, y, s, p, t) {
+  if (p <= 0) return;
+  const sc = eob(clamp(p)) * s, pulse = 0.5 + 0.5 * Math.sin(t * 9);
+  ctx.save(); ctx.globalAlpha = 0.35 * (1 - pulse); circle(x, y, 44 * sc * (1 + pulse * 0.6), C.yellow); ctx.restore();
+  circle(x, y, 22 * sc, C.yellow); circle(x, y, 9 * sc, C.ink);
+}
+
+/** tap ripple (p 0..1 over the tap) with a fingertip dot */
+export function tap(x, y, p, s = 1) {
+  if (p <= 0 || p >= 1) return;
+  ctx.save(); ctx.globalAlpha = 1 - p; ctx.strokeStyle = C.white; ctx.lineWidth = 6 * s;
+  ctx.beginPath(); ctx.arc(x, y, (20 + 70 * eo(p)) * s, 0, TAU); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.globalAlpha = Math.min(1, (1 - p) * 2) * 0.9; circle(x, y, 26 * s, 'rgba(255,255,255,0.75)'); ctx.restore();
+}
+
+/** a big red X (wrong). s = scale, a = alpha */
+export function redX(x, y, s, a = 1) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.scale(s, s); ctx.lineCap = 'round';
+  for (const [w, c] of [[64, C.ink], [44, C.red]]) {
+    ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(-110, -110); ctx.lineTo(110, 110); ctx.moveTo(110, -110); ctx.lineTo(-110, 110); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** a green check badge (right) */
+export function check(x, y, s, a = 1) {
+  if (a <= 0 || s <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.scale(s, s);
+  circle(0, 6, 92, C.ink); circle(0, 0, 90, C.green);
+  line([[-42, 2], [-12, 34], [46, -30]], C.white, 22);
+  ctx.restore();
+}
+
+/** a rounded label pill, centred */
+export function pill(text, x, y, size, bg = C.yellow, fg = C.ink, sc = 1) {
+  if (sc <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.font = `900 ${size}px Inter`; ctx.letterSpacing = `${size * 0.04}px`;
+  const tw = ctx.measureText(text).width, pw = tw + size * 1.1, ph = size * 1.7;
+  ctx.fillStyle = C.ink; rr(-pw / 2, -ph / 2 + size * 0.12, pw, ph, ph / 2); ctx.fill();
+  ctx.fillStyle = bg; rr(-pw / 2, -ph / 2, pw, ph, ph / 2); ctx.fill();
+  ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, size * 0.02, size * 0.06);
+  ctx.letterSpacing = '0px'; ctx.restore();
+}
+
+/** the series badge at the top of every video: "PHONE PHOTO SCHOOL" + lesson chip */
+export function seriesBadge(lesson, p = 1, t = 0) {
+  p = Math.min(p, 1 - stingP()(t) * 2);
+  if (p <= 0) return;
+  ctx.save(); ctx.globalAlpha = clamp(p * 2); ctx.translate(0, lerp(-60, 0, eo(clamp(p))));
+  ctx.font = '900 34px Inter'; ctx.letterSpacing = '4px'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const label = 'PHONE PHOTO SCHOOL', tw = ctx.measureText(label).width, chip = `L${String(lesson).padStart(2, '0')}`;
+  ctx.font = '900 30px Inter'; const cw = ctx.measureText(chip).width + 36;
+  const total = 56 + tw + 20 + cw, x0 = 540 - total / 2, y = 205;
+  ctx.fillStyle = 'rgba(10,12,16,0.75)'; rr(x0 - 22, y - 38, total + 44, 76, 38); ctx.fill();
+  if (IMG.mark) ctx.drawImage(IMG.mark, x0 - 8, y - 30, 62, 62 * IMG.mark.height / IMG.mark.width); else aperture(x0 + 22, y, 22, 0.5, 0, C.teal);
+  ctx.font = '900 34px Inter'; ctx.fillStyle = C.white; ctx.fillText(label, x0 + 56, y + 2);
+  ctx.font = '900 30px Inter'; ctx.fillStyle = C.teal; rr(x0 + 56 + tw + 20, y - 24, cw, 48, 24); ctx.fill();
+  ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText(chip, x0 + 56 + tw + 20 + cw / 2, y + 2);
+  ctx.letterSpacing = '0px'; ctx.restore();
+}
+
+/** "shot on" chip, bottom of the phone shots */
+export function shotOn(text, x, y, a = 1) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.font = '900 26px Inter'; ctx.letterSpacing = '3px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = C.mute; ctx.fillText(text, x, y); ctx.letterSpacing = '0px'; ctx.restore();
+}
+
+/** a full-frame white shutter flash, a 0..1 */
+export function flash(a) { if (a <= 0) return; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = a; ctx.fillStyle = C.white; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+
+/** a framed photo print (white border), centred, with the scene inside */
+export function print(x, y, w, h, rot, subj, t) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; rr(-w / 2 + 14, -h / 2 + 18, w, h, 18); ctx.fill();
+  ctx.fillStyle = C.white; rr(-w / 2, -h / 2, w, h, 18); ctx.fill();
+  const m = w * 0.05; ctx.save(); ctx.translate(-w / 2 + m, -h / 2 + m); ctx.beginPath(); ctx.rect(0, 0, w - 2 * m, h - 2 * m - m * 2); ctx.clip();
+  scene(w - 2 * m, h - 2 * m - m * 2, { subj, t }); ctx.restore();
+  ctx.restore();
+}
+
+// ---------- shared episode pieces ----------
+export const HANDLE = '@the_linse_art';                         // shown on every end card
+export const FRAME = { x: 100, y: 300, w: 880, h: 910 };            // the big viewfinder in demo shots
+/** big viewfinder: scene + optional grid + focus brackets at (bx, by) fractions; over(w, h) draws on top in frame coords */
+export function finder(t, sceneOpts = {}, { grid: g = 0, brackets = null, over = null, frame = FRAME } = {}) {
+  const { x, y, w, h } = frame;
+  ctx.fillStyle = C.ink; rr(x - 14, y - 14, w + 28, h + 28, 46); ctx.fill();
+  ctx.save(); rr(x, y, w, h, 34); ctx.clip(); ctx.translate(x, y);
+  if (sceneOpts.pixel > 1) pixelScene(w, h, { t, ...sceneOpts }, sceneOpts.pixel); else scene(w, h, { t, ...sceneOpts });
+  if (g) grid(0, 0, w, h, g, 6, 'rgba(255,255,255,0.9)');
+  if (over) over(w, h);
+  ctx.restore();
+  if (brackets) {
+    const bx = x + brackets[0] * w, by = y + brackets[1] * h, s = brackets[2] ?? 120;
+    ctx.strokeStyle = C.yellow; ctx.lineWidth = 8; ctx.lineCap = 'round';
+    for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      ctx.beginPath(); ctx.moveTo(bx + sx * s, by + sy * s - sy * 40); ctx.lineTo(bx + sx * s, by + sy * s); ctx.lineTo(bx + sx * s - sx * 40, by + sy * s); ctx.stroke();
+    }
+  }
+}
+
+/** shot 2 of every episode: LESSON + big number (lands at numAt) + topic pill (lands at titleAt). lt = time in shot */
+export function lessonCard(lt, t, n, title, numAt, titleAt) {
+  studio(t, C.panel2);
+  grid(0, 0, W, H, seg(lt, 0, 0.9), 6, C.teal);
+  ctx.font = '900 64px Inter'; ctx.letterSpacing = '14px'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = C.mute;
+  ctx.globalAlpha = seg(lt, 0, 0.25); ctx.fillText('LESSON', 552, 470); ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
+  if (lt > numAt - 0.05) bigLabel(String(n).padStart(2, '0'), 540, 730, 400, lerp(1.8, 1, eob(seg(lt, numAt - 0.05, numAt + 0.2))));
+  pill(title, 540, 1060, title.length > 12 ? 70 : 84, C.yellow, C.ink, eob(seg(lt, titleAt - 0.05, titleAt + 0.25)));
+}
+function bigLabel(text, x, y, size, sc) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-0.04); ctx.scale(sc, sc);
+  ctx.font = `900 ${size}px Inter`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  ctx.lineWidth = size * 0.2; ctx.strokeStyle = C.ink; ctx.strokeText(text, 0, 0); ctx.fillStyle = C.white; ctx.fillText(text, 0, 0); ctx.restore();
+}
+
+/** last shot of every episode: creator avatar + handle, + FOLLOW (pops at fol) and the next-lesson card (at nxt) */
+export function endCard(lt, t, fol, nxt, nextN, nextTitle) {
+  studio(t, C.panel2);
+  avatar(540, 480, 175, eob(seg(lt, 0.05, 0.4)));
+  const hq = eo(seg(lt, 0.25, 0.55));
+  if (hq > 0) {
+    ctx.save(); ctx.globalAlpha = hq; ctx.font = '900 54px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = C.white; ctx.fillText(HANDLE, 540, 725 + lerp(20, 0, hq)); ctx.restore();
+  }
+  const sc = eob(seg(lt, fol - 0.1, fol + 0.2)) * (1 + 0.04 * Math.sin(Math.max(0, lt - fol) * 8));
+  if (sc > 0) {
+    ctx.save(); ctx.translate(540, 865); ctx.scale(sc, sc);
+    ctx.fillStyle = C.ink; rr(-240, -70, 480, 150, 75); ctx.fill();
+    ctx.fillStyle = C.yellow; rr(-240, -80, 480, 150, 75); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.font = '900 76px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+ FOLLOW', 0, -4);
+    ctx.restore();
+  }
+  const q = eo(seg(lt, nxt - 0.1, nxt + 0.35));
+  if (q > 0) {
+    ctx.save(); ctx.globalAlpha = q; ctx.translate(0, lerp(60, 0, q));
+    ctx.fillStyle = C.panel; rr(150, 995, 780, 190, 36); ctx.fill();
+    ctx.fillStyle = C.teal; ctx.font = '900 40px Inter'; ctx.letterSpacing = '6px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(`NEXT · LESSON ${String(nextN).padStart(2, '0')}`, 540, 1050); ctx.letterSpacing = '0px';
+    ctx.fillStyle = C.white; ctx.font = '900 62px Inter'; ctx.fillText(nextTitle, 540, 1125);
+    ctx.restore();
+  }
+  logoSting(t);
+}
+
+// ---------- focus + exposure ----------
+/** the focus ring (yellow circle with ticks). p 0..1 = appear (shrinks onto the subject) */
+export function focusRing(x, y, r, p, color = C.yellow) {
+  if (p <= 0) return;
+  const rr_ = r * lerp(1.6, 1, eo(clamp(p)));
+  ctx.save(); ctx.globalAlpha = clamp(p * 3); ctx.strokeStyle = color; ctx.lineWidth = r * 0.07;
+  ctx.beginPath(); ctx.arc(x, y, rr_, 0, TAU); ctx.stroke();
+  for (let i = 0; i < 4; i++) { const a = (i / 4) * TAU; line([[x + Math.cos(a) * rr_, y + Math.sin(a) * rr_], [x + Math.cos(a) * rr_ * 0.82, y + Math.sin(a) * rr_ * 0.82]], color, r * 0.07); }
+  ctx.restore();
+}
+/** sun icon */
+export function sunIcon(x, y, r, color = C.yellow) {
+  circle(x, y, r * 0.5, color);
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * TAU; line([[x + Math.cos(a) * r * 0.72, y + Math.sin(a) * r * 0.72], [x + Math.cos(a) * r, y + Math.sin(a) * r]], color, r * 0.16); }
+}
+/** brightness slider: vertical track of length len centred at (x, y); val -1 (down/darker) .. 1 (up/brighter); a = alpha */
+export function sunSlider(x, y, len, val, a = 1, r = 34) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  line([[x, y - len / 2], [x, y + len / 2]], 'rgba(255,255,255,0.85)', r * 0.14);
+  const sy = y - (val * len) / 2; circle(sx(x), sy, r * 1.15, 'rgba(10,12,16,0.55)'); sunIcon(x, sy, r);
+  ctx.restore();
+  function sx(v) { return v; }
+}
+
+// ---------- the lens episodes ----------
+/** the creator's phone (S26 Ultra look, navy, no logo): a raised pill island with three big lenses (ultra-wide, wide, 3x),
+ *  and a second column with the 5x lens, flash and a small sensor. smudge 0..1 on the top lens · glow[i] per lens.
+ *  inCase: the light-blue case with a camera slider (the creator's everyday case) */
+export function phoneBack(x, y, s, rot, { smudge = 0, glow = [], inCase = false } = {}) {
+  const w = PHONE.w * s, h = PHONE.h * s;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ell(0, h * 0.53, w * 0.42, h * 0.025, 'rgba(0,0,0,0.35)');
+  if (inCase) {
+    ctx.fillStyle = '#7F95B8'; rr(-w / 2 - 14 * s, -h / 2 - 14 * s, w + 28 * s, h + 28 * s, 56 * s); ctx.fill();
+    ctx.fillStyle = '#93A9CC'; rr(-w / 2 - 6 * s, -h / 2 - 6 * s, w + 12 * s, h + 12 * s, 50 * s); ctx.fill();
+  } else {
+    ctx.fillStyle = '#1A2335'; rr(-w / 2 - 6 * s, -h / 2 - 6 * s, w + 12 * s, h + 12 * s, 44 * s); ctx.fill();   // navy frame
+    ctx.fillStyle = '#2C3C58'; rr(-w / 2, -h / 2, w, h, 40 * s); ctx.fill();
+    ctx.save(); rr(-w / 2, -h / 2, w, h, 40 * s); ctx.clip();                                                       // soft light sweep
+    ctx.fillStyle = '#3A4F73'; ctx.beginPath(); ctx.moveTo(w * 0.1, -h / 2); ctx.lineTo(w / 2, -h / 2); ctx.lineTo(w / 2, h * 0.25); ctx.lineTo(-w * 0.05, h / 2); ctx.lineTo(-w / 2, h / 2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#4A6189'; ctx.beginPath(); ctx.moveTo(w * 0.32, -h / 2); ctx.lineTo(w / 2, -h / 2); ctx.lineTo(w / 2, -h * 0.1); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  const L = LENSES(s), top = L[0][1], bot = L[2][1], cx = L[0][0], ir = 84 * s;
+  ctx.fillStyle = inCase ? '#6E84A8' : '#1F2B42'; rr(cx - ir, top - ir, ir * 2, bot - top + ir * 2, ir); ctx.fill();          // raised island
+  ctx.strokeStyle = inCase ? '#A9BCDB' : '#4C6288'; ctx.lineWidth = 3 * s; ctx.stroke();
+  [0, 1, 2].forEach((i) => lens(L[i][0], L[i][1], 64 * s, i === 0 ? smudge : 0, glow[i] ?? 0));
+  lens(L[3][0], L[3][1], 34 * s, 0, glow[3] ?? 0);                                                                    // 5x
+  circle(L[3][0], L[3][1] + 62 * s, 13 * s, '#55493A'); circle(L[3][0], L[3][1] + 62 * s, 10 * s, '#F1E2A8');       // flash
+  circle(L[3][0], L[3][1] + 120 * s, 27 * s, '#7C869A'); circle(L[3][0], L[3][1] + 120 * s, 21 * s, '#0E1218');      // sensor
+  circle(L[3][0] - 6 * s, L[3][1] + 114 * s, 4 * s, 'rgba(255,255,255,0.7)');
+  if (inCase) {                                                                                                       // camera slider (open)
+    ctx.fillStyle = '#93A9CC'; rr(L[3][0] + 70 * s, top - ir, 160 * s, bot - top + ir * 1.2, 26 * s); ctx.fill();
+    ctx.fillStyle = '#7F95B8'; rr(L[3][0] + 140 * s, top + 40 * s, 18 * s, 110 * s, 9 * s); ctx.fill();
+  }
+  ctx.restore();
+}
+/** lens centres (phone-local) for phoneBack at scale s: [ultra-wide, wide, 3x, 5x] */
+export const LENSES = (s) => [[-118 * s, -390 * s], [-118 * s, -250 * s], [-118 * s, -110 * s], [5 * s, -395 * s]];
+/** one camera lens, r = outer radius. smudge 0..1 = greasy fingerprint, glow 0..1 = highlight ring */
+export function lens(x, y, r, smudge = 0, glow = 0) {
+  if (glow > 0) { ctx.save(); ctx.globalAlpha = glow; circle(x, y, r * 1.25, C.yellow); ctx.restore(); }
+  circle(x, y, r, '#7C869A'); circle(x, y, r * 0.86, '#11151D'); circle(x, y, r * 0.6, '#1D2C4A');
+  circle(x, y, r * 0.34, '#0A0E16'); circle(x - r * 0.22, y - r * 0.24, r * 0.12, 'rgba(255,255,255,0.8)'); circle(x + r * 0.2, y + r * 0.22, r * 0.05, 'rgba(255,255,255,0.5)');
+  if (smudge > 0) fingerprint(x + r * 0.08, y + r * 0.05, r * 0.75, smudge);
+}
+/** an oily fingerprint smear */
+export function fingerprint(x, y, r, a) {
+  ctx.save(); ctx.globalAlpha = a * 0.5; ell(x, y, r, r * 1.15, '#E6D6A0', 0.3);
+  ctx.globalAlpha = a * 0.75; ctx.strokeStyle = '#F6EAC0'; ctx.lineWidth = r * 0.06;
+  for (let i = 1; i <= 5; i++) { ctx.beginPath(); ctx.ellipse(x, y, r * i * 0.18, r * i * 0.22, 0.3, 3.6, 8.6); ctx.stroke(); }
+  ctx.restore();
+}
+/** a fingertip (from below), tip at (x, y), s = width */
+export function finger(x, y, s, rot = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.fillStyle = '#7A4E35'; rr(-s / 2 - 4, -4, s + 8, s * 4, s / 2); ctx.fill();
+  ctx.fillStyle = '#9C6A4C'; rr(-s / 2, 0, s, s * 4, s / 2); ctx.fill();
+  ctx.fillStyle = '#D9B8A3'; rr(-s * 0.3, s * 0.12, s * 0.6, s * 0.55, s * 0.25); ctx.fill();
+  ctx.restore();
+}
+/** a microfiber cloth, centre (x, y), s scale */
+export function cloth(x, y, s, rot = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  ctx.fillStyle = '#2F5FC4'; rr(-150, -100, 300, 210, 30); ctx.fill();
+  ctx.fillStyle = '#4C7EE6'; rr(-150, -110, 300, 200, 30); ctx.fill();
+  ctx.fillStyle = '#6A97F0'; for (let i = 0; i < 4; i++) { rr(-120 + i * 70, -90, 22, 160, 11); ctx.fill(); }
+  ctx.restore();
+}
+/** a flat t-shirt, centre (x, y), s scale */
+export function shirt(x, y, s, color = '#E2574C') {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(-60, -120); ctx.lineTo(-160, -70); ctx.lineTo(-120, 10); ctx.lineTo(-90, -5); ctx.lineTo(-90, 140); ctx.lineTo(90, 140);
+  ctx.lineTo(90, -5); ctx.lineTo(120, 10); ctx.lineTo(160, -70); ctx.lineTo(60, -120); ctx.quadraticCurveTo(0, -70, -60, -120); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(-90, 100, 180, 40);
+  ctx.restore();
+}
+
+/** yellow arrows drawn along lines (each [[x0,y0],[x1,y1]]), p 0..1 = how far they've run */
+export function leadArrows(lines, p, lw = 12, color = C.yellow) {
+  if (p <= 0) return;
+  for (const [[x0, y0], [x1, y1]] of lines) {
+    const q = eo(clamp(p)), x = lerp(x0, x1, q * 0.92), y = lerp(y0, y1, q * 0.92), a = Math.atan2(y1 - y0, x1 - x0);
+    ctx.save(); ctx.strokeStyle = C.ink; ctx.lineWidth = lw + 8; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x, y); ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.stroke();
+    ctx.fillStyle = color; ctx.translate(x, y); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(lw * 2.6, 0); ctx.lineTo(-lw * 1.2, -lw * 2); ctx.lineTo(-lw * 1.2, lw * 2); ctx.closePath();
+    ctx.lineWidth = 6; ctx.strokeStyle = C.ink; ctx.stroke(); ctx.fill(); ctx.restore();
+  }
+}
+
+/** the creator avatar (flat cartoon from the profile photo: rust beanie, dark puffer jacket, camera up to the eye),
+ *  centre (x, y), radius r, sc = pop-in scale */
+export function avatar(x, y, r, sc = 1) {
+  if (sc <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc * r / 160, sc * r / 160);
+  circle(0, 8, 172, C.ink); circle(0, 0, 172, C.teal);
+  ctx.save(); ctx.beginPath(); ctx.arc(0, 0, 160, 0, TAU); ctx.clip();
+  ctx.fillStyle = '#CFE3EC'; ctx.fillRect(-170, -170, 340, 340);                         // pale wall
+  ctx.fillStyle = '#C8742E'; ctx.fillRect(72, -170, 100, 340);                            // warm wood door
+  ctx.fillStyle = '#A85E22'; ctx.fillRect(96, -170, 7, 340);
+  const skin = '#9C6A4C', skinD = '#7A4E35', jacket = '#2A2326', jacketHi = '#3B3135';
+  ctx.fillStyle = jacket; ctx.beginPath(); ctx.moveTo(-170, 170); ctx.lineTo(-155, 70); ctx.quadraticCurveTo(-120, 30, -55, 26);
+  ctx.lineTo(55, 26); ctx.quadraticCurveTo(120, 30, 155, 70); ctx.lineTo(170, 170); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = jacketHi; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  for (const yy of [92, 132]) { ctx.beginPath(); ctx.moveTo(-150, yy); ctx.quadraticCurveTo(-90, yy - 12, -40, yy + 4); ctx.stroke(); }
+  ell(-6, 32, 40, 14, '#1E191B');                                                         // collar
+  ell(-10, -28, 58, 68, skin); circle(-67, -22, 12, skinD);                              // head + ear
+  ctx.fillStyle = '#B5532E'; ctx.beginPath(); ctx.arc(-10, -52, 66, Math.PI, 0); ctx.lineTo(56, -46); ctx.lineTo(-76, -46); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#9A4325'; rr(-80, -62, 140, 22, 10); ctx.fill();                       // beanie fold
+  ctx.fillStyle = jacket; ctx.beginPath(); ctx.moveTo(30, 170); ctx.lineTo(92, 40); ctx.lineTo(132, 52); ctx.lineTo(96, 170); ctx.fill();     // right arm
+  ctx.beginPath(); ctx.moveTo(-96, 170); ctx.lineTo(-22, 48); ctx.lineTo(22, 58); ctx.lineTo(-36, 170); ctx.fill();                       // left arm
+  ell(14, 40, 48, 20, skinD); ell(14, 36, 44, 17, skin);                                 // left hand under the lens
+  ctx.fillStyle = '#16181D'; rr(-44, -52, 126, 80, 14); ctx.fill(); rr(-22, -66, 42, 20, 6); ctx.fill();   // camera body
+  ctx.fillStyle = '#3A3F4A'; rr(46, -62, 20, 12, 4); ctx.fill();                          // dial
+  circle(28, -10, 42, '#2A2E36'); circle(28, -10, 32, '#0F1115'); circle(28, -10, 19, '#2D3F5E');
+  circle(20, -18, 6, 'rgba(255,255,255,0.75)');
+  ctx.fillStyle = skin; rr(72, -46, 32, 84, 15); ctx.fill();                              // right hand gripping
+  ctx.fillStyle = skinD; for (let i = 0; i < 3; i++) { rr(62, -40 + i * 22, 22, 14, 7); ctx.fill(); }
+  ctx.restore(); ctx.restore();
+}
+
+/** the scene rendered at 1/px resolution and blown up (a digitally cropped, low-quality look) */
+let _off = null;
+export function pixelScene(w, h, o, px) {
+  const sw = Math.max(8, Math.round(w / px)), sh = Math.max(8, Math.round(h / px));
+  if (!_off) _off = document.createElement('canvas');
+  _off.width = sw; _off.height = sh;
+  const prev = ctx, oc = _off.getContext('2d');
+  setCtx(oc); oc.setTransform(sw / w, 0, 0, sh / h, 0, 0); scene(w, h, o); setCtx(prev);
+  ctx.save(); ctx.imageSmoothingEnabled = false; ctx.drawImage(_off, 0, 0, w, h); ctx.restore();
+}
+
+/** a padlock icon (locked), centre (x, y), s = height */
+export function padlock(x, y, s, color = C.yellow) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.strokeStyle = color; ctx.lineWidth = s * 0.13; ctx.beginPath(); ctx.arc(0, -s * 0.12, s * 0.24, Math.PI, 0); ctx.lineTo(s * 0.24, s * 0.05); ctx.moveTo(-s * 0.24, -s * 0.12); ctx.lineTo(-s * 0.24, s * 0.05); ctx.stroke();
+  ctx.fillStyle = color; rr(-s * 0.36, 0, s * 0.72, s * 0.5, s * 0.08); ctx.fill(); circle(0, s * 0.22, s * 0.07, C.ink);
+  ctx.restore();
+}
+
+/** a stylised eye (the viewer's gaze), centre (x, y), s = width */
+export function eye(x, y, s) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.moveTo(-s / 2 - 6, 0); ctx.quadraticCurveTo(0, -s * 0.5, s / 2 + 6, 0); ctx.quadraticCurveTo(0, s * 0.5, -s / 2 - 6, 0); ctx.fill();
+  ctx.fillStyle = C.white; ctx.beginPath(); ctx.moveTo(-s / 2, 0); ctx.quadraticCurveTo(0, -s * 0.42, s / 2, 0); ctx.quadraticCurveTo(0, s * 0.42, -s / 2, 0); ctx.fill();
+  circle(0, 0, s * 0.18, C.teal); circle(0, 0, s * 0.09, C.ink); circle(-s * 0.05, -s * 0.05, s * 0.035, C.white);
+  ctx.restore();
+}
+
+/** the closing brand sting: end card fades to black, the SR monogram (no text) fades + settles in, a soft gold glint sweeps across */
+export function logoSting(t) {
+  const p = stingP()(t); if (p <= 0) return;
+  ctx.save(); ctx.globalAlpha = p; ctx.fillStyle = '#08080A'; ctx.fillRect(-300, -300, W + 600, H + 600); ctx.restore();
+  if (!IMG.mark) return;
+  const t0 = T.dur - STING + 0.45;                                              // logo only once the screen is fully black
+  const q = eo(seg(t, t0, t0 + 0.6)), w = lerp(500, 540, q), h = w * IMG.mark.height / IMG.mark.width;
+  if (q <= 0) return;
+  ctx.save(); ctx.globalAlpha = q; ctx.drawImage(IMG.mark, 540 - w / 2, 860 - h / 2, w, h); ctx.restore();
+  const g = seg(t, t0 + 0.3, T.dur - 0.25);                                     // gold glint, clipped to the logo's own shape
+  if (g > 0 && g < 1) {
+    if (!_glint) _glint = document.createElement('canvas');
+    _glint.width = Math.ceil(w); _glint.height = Math.ceil(h);
+    const gc = _glint.getContext('2d'); gc.clearRect(0, 0, w, h); gc.drawImage(IMG.mark, 0, 0, w, h);
+    gc.globalCompositeOperation = 'source-atop';
+    const gx = lerp(-120, w + 120, g), gr = gc.createLinearGradient(gx - 110, 0, gx + 110, 0);
+    gr.addColorStop(0, 'rgba(255,200,120,0)'); gr.addColorStop(0.5, 'rgba(255,220,160,1)'); gr.addColorStop(1, 'rgba(255,200,120,0)');
+    gc.fillStyle = gr; gc.fillRect(0, 0, w, h); gc.globalCompositeOperation = 'source-over';
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55 * q; ctx.drawImage(_glint, 540 - w / 2, 860 - h / 2); ctx.restore();
+  }
+}
+let _glint = null;
+
+// ---------- the creator's photos ----------
+/** cover-fit placement of photo `key` in a w x h box. o: { cx, cy (focus point, 0..1 of the photo), zoom }.
+ *  Returns { dx, dy, dw, dh, at(fx, fy) → [x, y] box-local position of a point on the photo } */
+export function photoMap(key, w, h, o = {}) {
+  const im = IMG[key]; if (!im) return null;
+  const s = Math.max(w / im.width, h / im.height) * (o.zoom ?? 1), dw = im.width * s, dh = im.height * s;
+  const dx = clamp(w / 2 - (o.cx ?? 0.5) * dw, w - dw, 0), dy = clamp(h / 2 - (o.cy ?? 0.5) * dh, h - dh, 0);
+  return { dx, dy, dw, dh, at: (fx, fy) => [dx + fx * dw, dy + fy * dh] };
+}
+let _poff = null;
+/** draw photo `key` cover-fit into box (0,0,w,h). o adds: blur (px), bright (1 = as shot), haze 0..1 (simulated greasy-lens glow), pixel (block size) */
+export function photo(key, w, h, o = {}) {
+  const m = photoMap(key, w, h, o); if (!m) { ctx.fillStyle = C.panel; ctx.fillRect(0, 0, w, h); return null; }
+  const im = IMG[key];
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
+  if (o.pixel > 1) {
+    const sw = Math.max(8, Math.round(w / o.pixel)), sh = Math.max(8, Math.round(h / o.pixel));
+    if (!_poff) _poff = document.createElement('canvas'); _poff.width = sw; _poff.height = sh;
+    const pc = _poff.getContext('2d'); pc.drawImage(im, m.dx * sw / w, m.dy * sh / h, m.dw * sw / w, m.dh * sh / h);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(_poff, 0, 0, w, h); ctx.imageSmoothingEnabled = true;
+  } else {
+    const f = []; if ((o.blur ?? 0) > 0.2) f.push(`blur(${o.blur}px)`); if ((o.bright ?? 1) !== 1) f.push(`brightness(${o.bright})`);
+    if (o.haze > 0) f.push(`blur(${o.haze * 4}px)`, `contrast(${1 - o.haze * 0.35})`);
+    if (f.length) ctx.filter = f.join(' ');
+    ctx.drawImage(im, m.dx, m.dy, m.dw, m.dh); ctx.filter = 'none';
+    if (o.haze > 0) {                                                   // halation: bright parts bloom
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55 * o.haze; ctx.filter = 'blur(26px) brightness(1.5)';
+      ctx.drawImage(im, m.dx, m.dy, m.dw, m.dh); ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 0.16 * o.haze; ctx.fillStyle = '#FFF6E0'; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+  return m;
+}
+/** the big viewfinder showing a real photo. over(w, h, map) draws on top in frame coords */
+export function photoFinder(key, o = {}, { grid: g = 0, over = null, frame = FRAME, tag = false } = {}) {
+  const { x, y, w, h } = frame;
+  ctx.fillStyle = C.ink; rr(x - 14, y - 14, w + 28, h + 28, 46); ctx.fill();
+  ctx.save(); rr(x, y, w, h, 34); ctx.clip(); ctx.translate(x, y);
+  const m = photo(key, w, h, o);
+  if (g) grid(0, 0, w, h, g, 6, 'rgba(255,255,255,0.9)');
+  if (over && m) over(w, h, m);
+  ctx.restore();
+  if (tag) shotTag(x + w - 24, y + h - 30, tag === true ? 1 : tag);
+  return m;
+}
+/** "SHOT ON S26 ULTRA" tag, right-aligned at (x, y) */
+export function shotTag(x, y, a = 1) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.font = '900 28px Inter'; ctx.letterSpacing = '3px';
+  const t = 'SHOT ON S26 ULTRA', tw = ctx.measureText(t).width;
+  ctx.fillStyle = 'rgba(10,12,16,0.72)'; rr(x - tw - 82, y - 26, tw + 98, 52, 26); ctx.fill();
+  if (IMG.mark) ctx.drawImage(IMG.mark, x - tw - 72, y - 21, 44, 44 * IMG.mark.height / IMG.mark.width);
+  ctx.fillStyle = C.white; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(t, x - 6, y + 1);
+  ctx.letterSpacing = '0px'; ctx.restore();
+}
+/** a white-bordered print of photo `key`, centred at (x, y) */
+export function photoPrint(x, y, w, h, rot, key, o = {}) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; rr(-w / 2 + 14, -h / 2 + 18, w, h, 18); ctx.fill();
+  ctx.fillStyle = C.white; rr(-w / 2, -h / 2, w, h, 18); ctx.fill();
+  const m = w * 0.05, iw = w - 2 * m, ih = h - 4 * m;
+  ctx.save(); ctx.translate(-w / 2 + m, -h / 2 + m); const mp = photo(key, iw, ih, o); if (o.over && mp) o.over(iw, ih, mp); ctx.restore();
+  ctx.restore();
+}
+
+/** the MORE menu, from the creator's screenshot. p 0..1 = panel slides up; hl 0..1 = EXPERT RAW highlighted */
+export function moreMenu(w, h, p, hl = 0) {
+  const X = (x) => x / 923 * w, Y = (y) => y / 2000 * h;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${X(31)}px Inter`;
+  [['PHOTO', 142], ['VIDEO', 306], ['MORE', 462]].forEach(([m, mx]) => { ctx.fillStyle = m === 'MORE' ? C.white : '#8E8E93'; ctx.fillText(m, X(mx), Y(1845)); });
+  if (p <= 0) return null;
+  ctx.save(); ctx.globalAlpha = clamp(p * 1.5); ctx.translate(0, lerp(Y(120), 0, eo(p)));
+  ctx.fillStyle = '#1A1A1A'; rr(X(733), Y(1126), X(144), Y(80), Y(40)); ctx.fill(); ctx.fillStyle = C.white; ctx.font = `700 ${X(30)}px Inter`; ctx.fillText('Edit', X(805), Y(1166));
+  ctx.fillStyle = '#0F0F10'; rr(X(27), Y(1233), X(869), Y(535), X(60)); ctx.fill(); ctx.strokeStyle = '#2A2A2C'; ctx.lineWidth = X(2); ctx.stroke();
+  const items = [['EXPERT RAW', 164, 1328], ['PRO', 362, 1328], ['PRO VIDEO', 561, 1328], ['FOOD', 760, 1328], ['PANORAMA', 164, 1545], ['SLOW|MOTION', 362, 1545], ['HYPERLAPSE', 561, 1545], ['PORTRAIT|VIDEO', 760, 1545]];
+  let raw = null;
+  for (const [n, ix, iy] of items) {
+    const isRaw = n === 'EXPERT RAW';
+    if (isRaw && hl > 0) { ctx.save(); ctx.globalAlpha *= hl; ctx.strokeStyle = C.yellow; ctx.lineWidth = X(5); rr(X(ix - 92), Y(iy - 52), X(184), Y(160), X(26)); ctx.stroke(); ctx.restore(); }
+    ctx.strokeStyle = C.white; ctx.lineWidth = X(3.5); ctx.beginPath(); ctx.arc(X(ix), Y(iy), X(28), 0, TAU); ctx.stroke();
+    ctx.fillStyle = C.white;
+    if (isRaw) { ctx.font = `800 ${X(17)}px Inter`; ctx.fillText('RAW', X(ix), Y(iy) + X(1)); raw = [X(ix), Y(iy)]; }
+    else if (n === 'PRO') aperture(X(ix), Y(iy), X(20), 0.4, 0, '#BFC3CC');
+    else { circle(X(ix), Y(iy), X(9), '#BFC3CC'); }
+    ctx.fillStyle = C.white; ctx.font = `500 ${X(27)}px Inter`;
+    n.split('|').forEach((ln, k) => ctx.fillText(ln, X(ix), Y(iy + 66 + k * 35)));
+  }
+  ctx.restore();
+  return { raw };
+}
+
+/** film grain over (0,0,w,h), amount 0..1, changes every frame (seed) */
+export function grain(w, h, amt, seed = 0) {
+  if (amt <= 0) return;
+  ctx.save(); ctx.globalAlpha = amt;
+  for (let i = 0; i < 1400; i++) { const r = Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453, f = r - Math.floor(r), g = Math.sin(i * 4.1 + seed * 9.7) * 9999, f2 = g - Math.floor(g);
+    ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.6)'; ctx.fillRect(f * w, f2 * h, 3, 3); }
+  ctx.restore();
+}
+/** a file icon with a label and a size bar, centred at (x, y); fill 0..1 grows the bar */
+export function fileCard(x, y, label, sub, fill, color = C.teal, sc = 1) {
+  if (sc <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.fillStyle = C.ink; rr(-130, -150 + 8, 260, 300, 26); ctx.fill();
+  ctx.fillStyle = C.panel2; rr(-130, -150, 260, 300, 26); ctx.fill();
+  ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(60, -150); ctx.lineTo(130, -80); ctx.lineTo(60, -80); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C.white; ctx.font = '900 58px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, 0, -20);
+  ctx.fillStyle = C.mute; ctx.font = '800 28px Inter'; ctx.fillText(sub, 0, 40);
+  ctx.fillStyle = '#12151C'; rr(-100, 88, 200, 22, 11); ctx.fill(); ctx.fillStyle = color; rr(-100, 88, 200 * clamp(fill), 22, 11); ctx.fill();
+  ctx.restore();
+}

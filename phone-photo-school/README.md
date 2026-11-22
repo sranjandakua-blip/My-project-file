@@ -4,7 +4,7 @@ An Instagram series that teaches phone photography step by step, from the basics
 Each post is a **~25-second 9:16 flat-2D animated reel** with an AI voiceover, word-synced captions, sound effects and a quiet music bed.
 Everything is generated in code and costs nothing. No AI images, and no paid APIs.
 
-Every end card shows the creator avatar (a flat cartoon drawn from the profile photo, `avatar()` in kit.js) above @the_linse_art (`HANDLE` in kit.js). Finished: Lessons 01–05 (`epNN-*/renders/*.mp4`, each with a cover JPG). Instagram captions and hashtags are in [POSTS.md](POSTS.md).
+Every end card shows the creator avatar (a flat cartoon drawn from the profile photo, `avatar()` in kit.js) above @the_linse_art (`HANDLE` in kit.js). Finished: Lessons 01–10 (`epNN-*/renders/*.mp4`, each with a cover JPG). Instagram captions and hashtags are in [POSTS.md](POSTS.md).
 
 ## Format of every episode (keep it consistent)
 | beat | time | what |
@@ -54,11 +54,11 @@ teal = camera UI, yellow = the one key thing, red = wrong, green = right.
 3. Clean your lens (seriously) ✅
 4. Zoom lenses: .6 / 1x / 3x / 5x, when to use each ✅
 5. Leading lines ✅
-6. Shoot in the golden hour
-7. Portrait mode and background blur
-8. Night mode: hold still
-9. HDR and backlit subjects
-10. RAW vs JPEG (Expert RAW)
+6. Golden hour ✅
+7. Portrait mode ✅
+8. Night mode ✅
+9. Megapixels: 12M vs 50M vs 200M ✅
+10. Expert RAW ✅
 11. Pro mode 1: ISO
 12. Pro mode 2: shutter speed
 13. Pro mode 3: white balance

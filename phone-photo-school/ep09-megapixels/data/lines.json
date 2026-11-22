@@ -1,0 +1,61 @@
+{
+ "duration": 26.507,
+ "voice": "af_heart",
+ "speed": 1.08,
+ "lines": [
+  {
+   "i": 0,
+   "text": "Is two hundred megapixels always better?",
+   "start": 0.35,
+   "end": 2.53
+  },
+  {
+   "i": 1,
+   "text": "Lesson nine: megapixels.",
+   "start": 2.75,
+   "end": 4.436
+  },
+  {
+   "i": 2,
+   "text": "Tap the twelve M at the top to change resolution.",
+   "start": 4.656,
+   "end": 7.323
+  },
+  {
+   "i": 3,
+   "text": "Twelve is the best everyday choice,",
+   "start": 7.543,
+   "end": 9.363
+  },
+  {
+   "i": 4,
+   "text": "great in low light, with small files.",
+   "start": 9.633,
+   "end": 11.745
+  },
+  {
+   "i": 5,
+   "text": "Fifty and two hundred capture huge detail in bright light,",
+   "start": 11.965,
+   "end": 15.165
+  },
+  {
+   "i": 6,
+   "text": "perfect for crops and prints, but the files are massive.",
+   "start": 15.565,
+   "end": 18.623
+  },
+  {
+   "i": 7,
+   "text": "So shoot twelve by default, and switch up for landscapes.",
+   "start": 18.843,
+   "end": 21.838
+  },
+  {
+   "i": 8,
+   "text": "Follow for lesson ten!",
+   "start": 22.058,
+   "end": 23.287
+  }
+ ]
+}

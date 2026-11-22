@@ -1,0 +1,52 @@
+{
+  "series": "Phone Photo School",
+  "episode": 9,
+  "title": "Lesson 09: Megapixels",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 3.0,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Samsung Camera Photo mode: resolution picker 12M / 50M / 200M (creator's own screenshot); 12MP uses pixel binning for better low-light results and smaller files"
+  ],
+  "lines": [
+    {
+      "text": "Is two hundred megapixels always better?",
+      "caps": "IS *200MP | ALWAYS *BETTER?"
+    },
+    {
+      "text": "Lesson nine: megapixels.",
+      "caps": "LESSON *NINE | *MEGAPIXELS"
+    },
+    {
+      "text": "Tap the twelve M at the top to change resolution.",
+      "caps": "TAP THE *12M | CHANGE *RESOLUTION"
+    },
+    {
+      "text": "Twelve is the best everyday choice,",
+      "caps": "12M = *EVERYDAY"
+    },
+    {
+      "text": "great in low light, with small files.",
+      "caps": "GREAT IN *LOW LIGHT | *SMALL FILES"
+    },
+    {
+      "text": "Fifty and two hundred capture huge detail in bright light,",
+      "caps": "50 AND *200 | HUGE *DETAIL"
+    },
+    {
+      "text": "perfect for crops and prints, but the files are massive.",
+      "caps": "*CROPS AND PRINTS | *MASSIVE FILES"
+    },
+    {
+      "text": "So shoot twelve by default, and switch up for landscapes.",
+      "caps": "12M BY *DEFAULT | SWITCH UP FOR *LANDSCAPES"
+    },
+    {
+      "text": "Follow for lesson ten!",
+      "caps": "*FOLLOW | FOR LESSON *TEN"
+    }
+  ]
+}

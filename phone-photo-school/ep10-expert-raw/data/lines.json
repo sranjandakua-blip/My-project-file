@@ -1,0 +1,61 @@
+{
+ "duration": 28.709,
+ "voice": "af_heart",
+ "speed": 1.08,
+ "lines": [
+  {
+   "i": 0,
+   "text": "Want editing power like a real camera?",
+   "start": 0.35,
+   "end": 2.446
+  },
+  {
+   "i": 1,
+   "text": "Lesson ten: Expert RAW.",
+   "start": 2.666,
+   "end": 4.788
+  },
+  {
+   "i": 2,
+   "text": "Open More, and tap Expert RAW.",
+   "start": 5.008,
+   "end": 7.409
+  },
+  {
+   "i": 3,
+   "text": "It saves a RAW file alongside the normal photo,",
+   "start": 7.629,
+   "end": 11.239
+  },
+  {
+   "i": 4,
+   "text": "keeping far more detail in the highlights and shadows.",
+   "start": 11.699,
+   "end": 14.485
+  },
+  {
+   "i": 5,
+   "text": "So when you edit, you can rescue a bright sky,",
+   "start": 14.705,
+   "end": 17.165
+  },
+  {
+   "i": 6,
+   "text": "or lift dark corners, with much more room to play.",
+   "start": 17.355,
+   "end": 20.047
+  },
+  {
+   "i": 7,
+   "text": "The catch? Big files, and every shot needs editing.",
+   "start": 20.267,
+   "end": 23.162
+  },
+  {
+   "i": 8,
+   "text": "Follow for lesson eleven: Pro mode!",
+   "start": 23.382,
+   "end": 25.489
+  }
+ ]
+}

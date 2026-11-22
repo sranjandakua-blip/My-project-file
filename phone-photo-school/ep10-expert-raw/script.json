@@ -1,0 +1,52 @@
+{
+  "series": "Phone Photo School",
+  "episode": 10,
+  "title": "Lesson 10: Expert RAW",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 3.0,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Samsung Expert RAW: available from the camera's MORE menu (creator's own screenshot); saves a RAW (DNG) file alongside a regular photo, with more latitude for editing"
+  ],
+  "lines": [
+    {
+      "text": "Want editing power like a real camera?",
+      "caps": "EDITING *POWER | LIKE A REAL *CAMERA?"
+    },
+    {
+      "text": "Lesson ten: Expert RAW.",
+      "caps": "LESSON *TEN | EXPERT *RAW"
+    },
+    {
+      "text": "Open More, and tap Expert RAW.",
+      "caps": "OPEN *MORE | TAP EXPERT *RAW"
+    },
+    {
+      "text": "It saves a RAW file alongside the normal photo,",
+      "caps": "SAVES A *RAW FILE | ALONGSIDE THE *PHOTO"
+    },
+    {
+      "text": "keeping far more detail in the highlights and shadows.",
+      "caps": "MORE *DETAIL | HIGHLIGHTS AND *SHADOWS"
+    },
+    {
+      "text": "So when you edit, you can rescue a bright sky,",
+      "caps": "RESCUE A *BRIGHT SKY"
+    },
+    {
+      "text": "or lift dark corners, with much more room to play.",
+      "caps": "LIFT DARK *CORNERS | MORE *ROOM"
+    },
+    {
+      "text": "The catch? Big files, and every shot needs editing.",
+      "caps": "THE *CATCH? | BIG *FILES | NEEDS *EDITING"
+    },
+    {
+      "text": "Follow for lesson eleven: Pro mode!",
+      "caps": "*FOLLOW | LESSON *11: | PRO *MODE"
+    }
+  ]
+}

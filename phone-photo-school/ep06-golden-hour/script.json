@@ -1,0 +1,52 @@
+{
+  "series": "Phone Photo School",
+  "episode": 6,
+  "title": "Lesson 06: Golden Hour",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 3.0,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Golden hour: the period shortly after sunrise and before sunset when the sun is low and light is warmer and softer (standard photography guidance)"
+  ],
+  "lines": [
+    {
+      "text": "Why do some photos just glow?",
+      "caps": "WHY DO PHOTOS *GLOW?"
+    },
+    {
+      "text": "Lesson six: golden hour.",
+      "caps": "LESSON *SIX | GOLDEN *HOUR"
+    },
+    {
+      "text": "It's the first hour after sunrise, and the last hour before sunset,",
+      "caps": "FIRST HOUR AFTER *SUNRISE | LAST HOUR BEFORE *SUNSET"
+    },
+    {
+      "text": "when the sun sits low, and the light turns soft and warm.",
+      "caps": "THE SUN SITS *LOW | SOFT AND *WARM"
+    },
+    {
+      "text": "Harsh midday sun gives hard shadows and squinting faces.",
+      "caps": "HARSH *MIDDAY | HARD *SHADOWS"
+    },
+    {
+      "text": "Try putting the sun behind your subject,",
+      "caps": "SUN *BEHIND | YOUR *SUBJECT"
+    },
+    {
+      "text": "for a glowing rim of light,",
+      "caps": "A GLOWING *RIM"
+    },
+    {
+      "text": "or tap the sky and slide the sun down, for a silhouette.",
+      "caps": "TAP THE *SKY | SLIDE IT *DOWN | *SILHOUETTE"
+    },
+    {
+      "text": "Follow for lesson seven!",
+      "caps": "*FOLLOW | FOR LESSON *SEVEN"
+    }
+  ]
+}

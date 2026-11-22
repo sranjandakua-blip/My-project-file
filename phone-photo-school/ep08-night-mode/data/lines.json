@@ -1,0 +1,61 @@
+{
+ "duration": 24.983,
+ "voice": "af_heart",
+ "speed": 1.08,
+ "lines": [
+  {
+   "i": 0,
+   "text": "Night photos coming out dark and grainy?",
+   "start": 0.35,
+   "end": 2.35
+  },
+  {
+   "i": 1,
+   "text": "Lesson eight: night mode.",
+   "start": 2.57,
+   "end": 4.015
+  },
+  {
+   "i": 2,
+   "text": "In low light, look for the little moon icon.",
+   "start": 4.235,
+   "end": 6.418
+  },
+  {
+   "i": 3,
+   "text": "That number is how many seconds it needs.",
+   "start": 6.638,
+   "end": 8.586
+  },
+  {
+   "i": 4,
+   "text": "Tap it, then hold perfectly still until it finishes.",
+   "start": 8.806,
+   "end": 11.561
+  },
+  {
+   "i": 5,
+   "text": "Brace your elbows, or rest the phone on something solid.",
+   "start": 11.781,
+   "end": 14.572
+  },
+  {
+   "i": 6,
+   "text": "Stick to one x, the main camera gathers the most light.",
+   "start": 14.791,
+   "end": 17.672
+  },
+  {
+   "i": 7,
+   "text": "Your night shots come out bright, clean, and sharp.",
+   "start": 17.892,
+   "end": 20.271
+  },
+  {
+   "i": 8,
+   "text": "Follow for lesson nine!",
+   "start": 20.491,
+   "end": 21.764
+  }
+ ]
+}

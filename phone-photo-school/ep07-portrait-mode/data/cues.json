@@ -1,0 +1,126 @@
+{
+ "duration": 24.643,
+ "cues": [
+  {
+   "t": 0.05,
+   "type": "whoosh"
+  },
+  {
+   "t": 1.307,
+   "type": "sparkle",
+   "dur": 0.7
+  },
+  {
+   "t": 2.325,
+   "type": "whoosh"
+  },
+  {
+   "t": 2.822,
+   "type": "slam",
+   "gain": 0.8
+  },
+  {
+   "t": 3.228,
+   "type": "pop"
+  },
+  {
+   "t": 4.243,
+   "type": "whoosh"
+  },
+  {
+   "t": 4.323,
+   "type": "zip",
+   "gain": 0.6
+  },
+  {
+   "t": 6.381,
+   "type": "pop"
+  },
+  {
+   "t": 6.804,
+   "type": "whoosh"
+  },
+  {
+   "t": 7.181,
+   "type": "tap"
+  },
+  {
+   "t": 7.231,
+   "type": "slide",
+   "dur": 0.5,
+   "gain": 0.5
+  },
+  {
+   "t": 8.485,
+   "type": "pop"
+  },
+  {
+   "t": 9.544,
+   "type": "whoosh"
+  },
+  {
+   "t": 10.153,
+   "type": "slide",
+   "dur": 0.5,
+   "gain": 0.6
+  },
+  {
+   "t": 12.025,
+   "type": "pop"
+  },
+  {
+   "t": 12.495,
+   "type": "whoosh"
+  },
+  {
+   "t": 12.864,
+   "type": "slide",
+   "dur": 1.9120000000000008,
+   "gain": 0.6
+  },
+  {
+   "t": 13.064,
+   "type": "pop"
+  },
+  {
+   "t": 15.086,
+   "type": "whoosh"
+  },
+  {
+   "t": 15.086,
+   "type": "slide",
+   "dur": 1.2,
+   "gain": 0.5
+  },
+  {
+   "t": 16.249,
+   "type": "sparkle",
+   "dur": 0.6
+  },
+  {
+   "t": 17.151,
+   "type": "whoosh"
+  },
+  {
+   "t": 17.911,
+   "type": "pop"
+  },
+  {
+   "t": 18.406,
+   "type": "pop"
+  },
+  {
+   "t": 20.113,
+   "type": "whoosh"
+  },
+  {
+   "t": 20.193,
+   "type": "pop"
+  },
+  {
+   "t": 21.115,
+   "type": "pop",
+   "gain": 0.6
+  }
+ ]
+}

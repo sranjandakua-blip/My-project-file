@@ -6,7 +6,8 @@ import { T } from './timing.js';
 // brand images (assets/), loaded once by main.js before the first frame
 export const IMG = {};
 // the creator's own S26 Ultra photos (assets/photos/<key>.jpg)
-export const PHOTOS = ['geese', 'couple', 'boats', 'courtyard', 'lobby', 'beam', 'lighthouse', 'arches', 'tower', 'sunset', 'kittens', 'templeNight', 'templeTop'];
+export const PHOTOS = ['geese', 'couple', 'boats', 'courtyard', 'lobby', 'beam', 'lighthouse', 'arches', 'tower', 'sunset', 'kittens', 'templeNight', 'templeTop',
+  'gate', 'valley', 'mural', 'stupa', 'cloudVillage', 'roof', 'stairs', 'clock', 'stadium', 'winding', 'kanch', 'shiva', 'gopuram', 'snow', 'church', 'pyramids', 'houses'];
 export async function loadAssets() {
   const load = (k, f) => new Promise((res) => { const i = new Image(); i.onload = () => { IMG[k] = i; res(); }; i.onerror = () => res(); i.src = f; });
   await Promise.all([load('mark', 'assets/logo-mark.png'), load('full', 'assets/logo-full.png'),
@@ -46,8 +47,14 @@ export function aperture(x, y, r, open, rot, color) {
  *  flower {x, y, s, blur}: a foreground flower (own blur) · haze 0..1: greasy-lens glow · person {x, y, s} · balloon {x, y, s}
  *  road {vx}: a road running to the vanishing point x = vx (0..1, may be off-frame) */
 export function scene(w, h, o = {}) {
-  const { subj = 0.5, t = 0, sunX = 0.3, zoom = 1, blur = 0, bright = 1, haze = 0 } = o;
+  const { subj = 0.5, t = 0, zoom = 1, blur = 0, bright = 1, haze = 0 } = o;
   const hz = h * (o.hz ?? 0.64), dy = hz - h * 0.64;            // o.hz moves the horizon (0..1)
+  // o.light: 'golden' (low warm sun, long shadows) · 'noon' (high white sun, hard short shadows) · default daylight
+  const G = o.light === 'golden', N = o.light === 'noon';
+  const P = G ? { sky: '#F0A35E', skyLow: '#F8D08A', sun: '#FFE9A8', far: '#B98AA0', near: '#8E6C8E', ground: '#A9A35A', groundDark: '#8F8A48' }
+              : N ? { sky: '#A8DDF7', skyLow: '#D6F0FB', sun: '#FFFDF0', far: C.mtnFar, near: C.mtnNear, ground: '#5CC07F', groundDark: '#47A768' }
+              : { sky: C.sky, skyLow: C.skyLow, sun: C.sun, far: C.mtnFar, near: C.mtnNear, ground: C.ground, groundDark: C.groundDark };
+  const sunX = o.sunX ?? (G ? 0.72 : N ? 0.5 : 0.3), sunY = o.sunY ?? (G ? 0.56 : N ? 0.09 : 0.27);
   ctx.save(); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
   const f = []; if (blur > 0.2) f.push(`blur(${blur}px)`); if (bright !== 1) f.push(`brightness(${bright})`); if (haze > 0) f.push(`blur(${haze * 5}px)`, `contrast(${1 - haze * 0.3})`);
   if (f.length) ctx.filter = f.join(' ');
@@ -55,9 +62,10 @@ export function scene(w, h, o = {}) {
     const half = 0.5 / zoom, cx = clamp(o.zx ?? 0.5, half, 1 - half), cy = clamp(o.zy ?? 0.5, half, 1 - half);
     ctx.translate(w / 2, h / 2); ctx.scale(zoom, zoom); ctx.translate(-cx * w, -cy * h);
   }
-  ctx.fillStyle = C.sky; ctx.fillRect(0, 0, w, hz);
-  ctx.fillStyle = C.skyLow; ctx.fillRect(0, hz * 0.62, w, hz * 0.38);
-  circle(w * sunX, h * 0.27 + dy, w * 0.085, C.sun);
+  ctx.fillStyle = P.sky; ctx.fillRect(0, 0, w, hz);
+  ctx.fillStyle = P.skyLow; ctx.fillRect(0, hz * 0.62, w, hz * 0.38);
+  if (G) { ctx.save(); ctx.globalAlpha = 0.35; circle(w * sunX, h * sunY + dy, w * 0.16, '#FFD98A'); ctx.restore(); }
+  circle(w * sunX, h * sunY + dy, w * (N ? 0.06 : 0.085), P.sun);
   for (let i = 0; i < 2; i++) {
     const cx = ((w * (0.25 + i * 0.5) + t * 18 * (i + 1)) % (w * 1.3)) - w * 0.15, cy = h * (0.12 + i * 0.1), s = w * 0.05;
     ctx.fillStyle = C.white; ctx.beginPath();
@@ -66,14 +74,20 @@ export function scene(w, h, o = {}) {
   }
   if (o.balloon) balloon(o.balloon.x * w, o.balloon.y * h + Math.sin(t * 1.5) * h * 0.004, o.balloon.s * w);
   const ridge = (pts, col) => { ctx.beginPath(); ctx.moveTo(0, hz); pts.forEach(([a, b]) => ctx.lineTo(a * w, b * h + dy)); ctx.lineTo(w, hz); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); };
-  ridge([[0, 0.5], [0.18, 0.38], [0.34, 0.5], [0.52, 0.33], [0.72, 0.48], [0.88, 0.4], [1, 0.47]], C.mtnFar);
-  ridge([[0, 0.58], [0.22, 0.47], [0.4, 0.6], [0.62, 0.5], [0.82, 0.6], [1, 0.54]], C.mtnNear);
-  ctx.fillStyle = C.ground; ctx.fillRect(0, hz, w, h - hz);
-  ctx.fillStyle = C.groundDark; ctx.fillRect(0, hz + (h - hz) * 0.55, w, h);
+  ridge([[0, 0.5], [0.18, 0.38], [0.34, 0.5], [0.52, 0.33], [0.72, 0.48], [0.88, 0.4], [1, 0.47]], P.far);
+  ridge([[0, 0.58], [0.22, 0.47], [0.4, 0.6], [0.62, 0.5], [0.82, 0.6], [1, 0.54]], P.near);
+  ctx.fillStyle = P.ground; ctx.fillRect(0, hz, w, h - hz);
+  ctx.fillStyle = P.groundDark; ctx.fillRect(0, hz + (h - hz) * 0.55, w, h);
+  const shadow = (x, y, len) => {                                  // cast shadows: long and away from a low sun, short at noon
+    ctx.save(); ctx.globalAlpha = G ? 0.28 : 0.4; ctx.fillStyle = '#2A2238';
+    const dir = sunX > 0.5 ? -1 : 1, L = G ? len * 2.6 : N ? len * 0.35 : len * 0.6;
+    ctx.beginPath(); ctx.ellipse(x + dir * L / 2, y, L / 2 + w * 0.02, h * 0.018, 0, 0, TAU); ctx.fill(); ctx.restore(); };
+  if (o.light) { shadow(subj * w, h * (o.treeY ?? 0.8), h * 0.2 * (o.treeS ?? 1)); if (o.person) shadow(o.person.x * w, o.person.y * h, o.person.s * h * 0.8); }
   if (o.road) road(w, h, hz, o.road.vx, o.road.spread ?? 0);
   tree(subj * w, h * (o.treeY ?? 0.8), h * 0.0011 * (o.treeS ?? 1));
-  if (o.person) person(o.person.x * w, o.person.y * h, o.person.s * h);
+  if (o.person && !o.personSharp) drawPerson(o.person, w, h);
   ctx.filter = 'none';
+  if (o.person && o.personSharp) drawPerson(o.person, w, h);
   if (o.flower) { const fl = o.flower; if (fl.blur > 0.2) ctx.filter = `blur(${fl.blur}px)${bright !== 1 ? ` brightness(${bright})` : ''}`; else if (bright !== 1) ctx.filter = `brightness(${bright})`;
     flower(fl.x * w, fl.y * h, fl.s * h); ctx.filter = 'none'; }
   if (haze > 0) {                                                  // greasy lens: milky veil + blooming sun
@@ -84,6 +98,13 @@ export function scene(w, h, o = {}) {
   ctx.restore();
 }
 
+/** person with optional rim light (rim 0..1, warm glow around the edges) or silhouette (sil 0..1) */
+function drawPerson(pp, w, h) {
+  const prev = ctx.filter;
+  if (pp.sil > 0) ctx.filter = `${prev === 'none' ? '' : prev} brightness(${lerp(1, 0.08, pp.sil)})`.trim();
+  if (pp.rim > 0) ctx.filter = `${ctx.filter === 'none' ? '' : ctx.filter} drop-shadow(0 0 ${6 + 10 * pp.rim}px rgba(255,214,120,${pp.rim})) drop-shadow(0 0 ${14 + 26 * pp.rim}px rgba(255,170,70,${0.9 * pp.rim}))`.trim();
+  person(pp.x * w, pp.y * h, pp.s * h); ctx.filter = prev;
+}
 /** a road from the bottom of the frame to the vanishing point x = vx*w on the horizon */
 export function road(w, h, hz, vx, spread = 0) {
   const ax = vx * w, ay = hz + h * 0.005, bl = w * (0.12 - spread), br = w * (0.98 + spread);
@@ -182,14 +203,38 @@ export function cameraApp(w, h, o = {}) {
   ctx.strokeStyle = ic; ctx.lineWidth = X(4); ctx.lineJoin = 'round';
   ctx.beginPath(); ctx.moveTo(X(530), ty - X(22)); ctx.lineTo(X(512), ty + X(2)); ctx.lineTo(X(530), ty + X(2)); ctx.lineTo(X(514), ty + X(24)); ctx.stroke();
   line([[X(505), ty - X(20)], [X(540), ty + X(20)]], ic, X(3.5));
-  ctx.font = `700 ${X(30)}px Inter`; ctx.fillStyle = ic; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('12M', X(603), ty + X(1));
+  ctx.font = `700 ${X(30)}px Inter`; ctx.fillStyle = o.resHi ? C.yellow : ic; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(o.resSel ?? '12M', X(603), ty + X(1));
+  if (o.resHi) { ctx.save(); ctx.strokeStyle = C.yellow; ctx.lineWidth = X(3); rr(X(560), ty - X(26), X(86), X(52), X(14)); ctx.stroke(); ctx.restore(); }
   ctx.strokeStyle = 'rgba(255,255,255,0.55)'; rr(X(667), ty - X(20), X(40), X(40), X(10)); ctx.stroke(); line([[X(670), ty - X(18)], [X(704), ty + X(18)]], 'rgba(255,255,255,0.55)', X(3));
   for (const [dx, dy] of [[-8, 4], [6, -6], [8, 8]]) { ctx.beginPath(); ctx.arc(X(767 + dx), ty + X(dy), X(12), 0, TAU); ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.stroke(); }
   ctx.strokeStyle = C.yellow; ctx.beginPath(); ctx.arc(X(849), ty, X(20), 0, TAU); ctx.stroke();
   ctx.beginPath(); ctx.arc(X(849), ty + X(2), X(10), 0.3, Math.PI - 0.3); ctx.stroke(); circle(X(842), ty - X(6), X(2.5), C.yellow); circle(X(856), ty - X(6), X(2.5), C.yellow);
   // zoom pill (or the quick-settings bar sliding in over it)
-  const q = clamp(o.quick ?? 0), zy = Y(1476), sel = _zoomKey(o.zoomSel);
-  if (q < 1) {
+  const q = clamp(o.quick ?? 0), zy = Y(1476), sel = _zoomKey(o.zoomSel), PORT = o.mode === 'PORTRAIT', rp = clamp(o.res ?? 0);
+  if (o.moon != null) {                                              // night-mode moon + seconds (bottom-right of the viewfinder)
+    const mx = X(820), my = Y(1320), hl = o.moonHi ?? 0;
+    if (hl > 0) { ctx.save(); ctx.globalAlpha = hl * 0.35; circle(mx + X(8), my, X(52), C.yellow); ctx.restore(); }
+    ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(mx, my, X(18), 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.9)'; ctx.beginPath(); ctx.arc(mx + X(9), my - X(7), X(16), 0, TAU); ctx.fill();
+    ctx.fillStyle = C.yellow; ctx.font = `700 ${X(34)}px Inter`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(o.moon), mx + X(32), my + X(1));
+  }
+  if (o.ready > 0) { ctx.save(); ctx.globalAlpha = o.ready; ctx.fillStyle = 'rgba(20,20,20,0.85)'; rr(X(390), Y(197), X(142), Y(62), X(14)); ctx.fill();
+    ctx.fillStyle = C.yellow; ctx.font = `600 ${X(30)}px Inter`; ctx.fillText('Ready', X(461), Y(228)); ctx.restore(); }
+  if (rp > 0) {                                                      // resolution picker: 200M · 50M · 12M
+    ctx.save(); ctx.globalAlpha = rp; ctx.fillStyle = '#2A2A2C'; rr(X(220), Y(1417), X(482), Y(116), Y(58)); ctx.fill();
+    for (const [r, rx] of [['200M', 328], ['50M', 461], ['12M', 595]]) { ctx.fillStyle = r === (o.resSel ?? '12M') ? C.yellow : C.white; ctx.font = `700 ${X(31)}px Inter`; ctx.fillText(r, X(rx), zy + X(1)); }
+    ctx.restore();
+  }
+  if (PORT && q < 1 && rp < 1) {                                     // Portrait: effect button · 1 2 3 5 · ⁘
+    ctx.save(); ctx.globalAlpha = 1 - Math.max(q, rp);
+    ctx.strokeStyle = C.yellow; ctx.lineWidth = X(4); ctx.beginPath(); ctx.arc(X(87), zy, X(40), 0, TAU); ctx.stroke(); circle(X(87), zy, X(16), C.white);
+    ctx.fillStyle = 'rgba(42,42,44,0.92)'; rr(X(303), Y(1433), X(317), Y(85), Y(42)); ctx.fill();
+    for (const [z, zx] of [['1', 348], ['2', 423], ['3', 497], ['5', 577]]) { const on = z === (o.portraitZoom ?? '5'); if (on) circle(X(zx), zy, X(38), '#55555A');
+      ctx.fillStyle = C.white; ctx.font = `700 ${X(on ? 32 : 29)}px Inter`; ctx.fillText(on ? `${z}×` : z, X(zx), zy + X(1)); }
+    circle(X(830), zy, X(40), 'rgba(42,42,44,0.92)'); for (const [dx, dy] of [[-9, -9], [9, -9], [-9, 9], [9, 9]]) circle(X(830 + dx), zy + X(dy), X(5), C.white);
+    ctx.restore();
+  }
+  if (q < 1 && !PORT && rp < 1) {
     ctx.save(); ctx.globalAlpha = 1 - q;
     ctx.fillStyle = 'rgba(42,42,44,0.92)'; rr(X(188), Y(1433), X(547), Y(85), Y(42)); ctx.fill();
     for (const [z, zx] of CAM_ZOOM) {
@@ -223,7 +268,8 @@ export function cameraApp(w, h, o = {}) {
   ctx.strokeStyle = C.white; ctx.lineWidth = X(4); ctx.beginPath(); ctx.arc(X(773), by, X(26), 3.6, 5.9); ctx.stroke(); ctx.beginPath(); ctx.arc(X(773), by, X(26), 0.5, 2.8); ctx.stroke();
   // modes
   ctx.font = `700 ${X(31)}px Inter`;
-  [['PORTRAIT', 268], ['PHOTO', 461], ['VIDEO', 625], ['MORE', 782]].forEach(([m, mx]) => { ctx.fillStyle = m === 'PHOTO' ? C.white : '#8E8E93'; ctx.fillText(m, X(mx), Y(1845)); });
+  const modes = PORT ? [['PORTRAIT', 461], ['PHOTO', 653], ['VIDEO', 818]] : [['PORTRAIT', 268], ['PHOTO', 461], ['VIDEO', 625], ['MORE', 782]];
+  modes.forEach(([m, mx]) => { ctx.fillStyle = m === (PORT ? 'PORTRAIT' : 'PHOTO') ? C.white : '#8E8E93'; ctx.fillText(m, X(mx), Y(1845)); });
 }
 
 /** One UI "Camera settings" (dark), sliding in from the right (p 0..1). The "Composition guide" row highlights (hl 0..1)
@@ -691,5 +737,54 @@ export function photoPrint(x, y, w, h, rot, key, o = {}) {
   ctx.fillStyle = C.white; rr(-w / 2, -h / 2, w, h, 18); ctx.fill();
   const m = w * 0.05, iw = w - 2 * m, ih = h - 4 * m;
   ctx.save(); ctx.translate(-w / 2 + m, -h / 2 + m); const mp = photo(key, iw, ih, o); if (o.over && mp) o.over(iw, ih, mp); ctx.restore();
+  ctx.restore();
+}
+
+/** the MORE menu, from the creator's screenshot. p 0..1 = panel slides up; hl 0..1 = EXPERT RAW highlighted */
+export function moreMenu(w, h, p, hl = 0) {
+  const X = (x) => x / 923 * w, Y = (y) => y / 2000 * h;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${X(31)}px Inter`;
+  [['PHOTO', 142], ['VIDEO', 306], ['MORE', 462]].forEach(([m, mx]) => { ctx.fillStyle = m === 'MORE' ? C.white : '#8E8E93'; ctx.fillText(m, X(mx), Y(1845)); });
+  if (p <= 0) return null;
+  ctx.save(); ctx.globalAlpha = clamp(p * 1.5); ctx.translate(0, lerp(Y(120), 0, eo(p)));
+  ctx.fillStyle = '#1A1A1A'; rr(X(733), Y(1126), X(144), Y(80), Y(40)); ctx.fill(); ctx.fillStyle = C.white; ctx.font = `700 ${X(30)}px Inter`; ctx.fillText('Edit', X(805), Y(1166));
+  ctx.fillStyle = '#0F0F10'; rr(X(27), Y(1233), X(869), Y(535), X(60)); ctx.fill(); ctx.strokeStyle = '#2A2A2C'; ctx.lineWidth = X(2); ctx.stroke();
+  const items = [['EXPERT RAW', 164, 1328], ['PRO', 362, 1328], ['PRO VIDEO', 561, 1328], ['FOOD', 760, 1328], ['PANORAMA', 164, 1545], ['SLOW|MOTION', 362, 1545], ['HYPERLAPSE', 561, 1545], ['PORTRAIT|VIDEO', 760, 1545]];
+  let raw = null;
+  for (const [n, ix, iy] of items) {
+    const isRaw = n === 'EXPERT RAW';
+    if (isRaw && hl > 0) { ctx.save(); ctx.globalAlpha *= hl; ctx.strokeStyle = C.yellow; ctx.lineWidth = X(5); rr(X(ix - 92), Y(iy - 52), X(184), Y(160), X(26)); ctx.stroke(); ctx.restore(); }
+    ctx.strokeStyle = C.white; ctx.lineWidth = X(3.5); ctx.beginPath(); ctx.arc(X(ix), Y(iy), X(28), 0, TAU); ctx.stroke();
+    ctx.fillStyle = C.white;
+    if (isRaw) { ctx.font = `800 ${X(17)}px Inter`; ctx.fillText('RAW', X(ix), Y(iy) + X(1)); raw = [X(ix), Y(iy)]; }
+    else if (n === 'PRO') aperture(X(ix), Y(iy), X(20), 0.4, 0, '#BFC3CC');
+    else { circle(X(ix), Y(iy), X(9), '#BFC3CC'); }
+    ctx.fillStyle = C.white; ctx.font = `500 ${X(27)}px Inter`;
+    n.split('|').forEach((ln, k) => ctx.fillText(ln, X(ix), Y(iy + 66 + k * 35)));
+  }
+  ctx.restore();
+  return { raw };
+}
+
+/** film grain over (0,0,w,h), amount 0..1, changes every frame (seed) */
+export function grain(w, h, amt, seed = 0) {
+  if (amt <= 0) return;
+  ctx.save(); ctx.globalAlpha = amt;
+  for (let i = 0; i < 1400; i++) { const r = Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453, f = r - Math.floor(r), g = Math.sin(i * 4.1 + seed * 9.7) * 9999, f2 = g - Math.floor(g);
+    ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.6)'; ctx.fillRect(f * w, f2 * h, 3, 3); }
+  ctx.restore();
+}
+/** a file icon with a label and a size bar, centred at (x, y); fill 0..1 grows the bar */
+export function fileCard(x, y, label, sub, fill, color = C.teal, sc = 1) {
+  if (sc <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.fillStyle = C.ink; rr(-130, -150 + 8, 260, 300, 26); ctx.fill();
+  ctx.fillStyle = C.panel2; rr(-130, -150, 260, 300, 26); ctx.fill();
+  ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(60, -150); ctx.lineTo(130, -80); ctx.lineTo(60, -80); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C.white; ctx.font = '900 58px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, 0, -20);
+  ctx.fillStyle = C.mute; ctx.font = '800 28px Inter'; ctx.fillText(sub, 0, 40);
+  ctx.fillStyle = '#12151C'; rr(-100, 88, 200, 22, 11); ctx.fill(); ctx.fillStyle = color; rr(-100, 88, 200 * clamp(fill), 22, 11); ctx.fill();
   ctx.restore();
 }

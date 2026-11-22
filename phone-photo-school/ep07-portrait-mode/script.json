@@ -1,0 +1,53 @@
+{
+  "series": "Phone Photo School",
+  "episode": 7,
+  "title": "Lesson 07: Portrait Mode",
+  "voice": "af_heart",
+  "speed": 1.08,
+  "lead": 0.35,
+  "outro": 3.0,
+  "gap": 0.22,
+  "music": "bed",
+  "sources": [
+    "Samsung Camera Portrait mode: zoom options 1x/2x/3x/5x and a 'Ready' indicator when the effect can be applied (creator's own screenshot)",
+    "Background blur increases with subject-to-background distance (standard optics)"
+  ],
+  "lines": [
+    {
+      "text": "Want that dreamy, blurred background?",
+      "caps": "DREAMY *BLURRED | *BACKGROUND?"
+    },
+    {
+      "text": "Lesson seven: portrait mode.",
+      "caps": "LESSON *SEVEN | PORTRAIT *MODE"
+    },
+    {
+      "text": "Swipe to Portrait, and wait for the word Ready.",
+      "caps": "SWIPE TO *PORTRAIT | WAIT FOR *READY"
+    },
+    {
+      "text": "Pick three x for natural, flattering faces,",
+      "caps": "PICK *3X | *FLATTERING FACES"
+    },
+    {
+      "text": "and step back, so your subject fills the frame.",
+      "caps": "STEP *BACK | FILL THE *FRAME"
+    },
+    {
+      "text": "Keep some distance between them and the background.",
+      "caps": "ADD *DISTANCE | FROM THE *BACKGROUND"
+    },
+    {
+      "text": "The farther it is, the creamier the blur.",
+      "caps": "FARTHER = *CREAMIER"
+    },
+    {
+      "text": "It works on pets and objects too, not just people.",
+      "caps": "WORKS ON *PETS | AND *OBJECTS"
+    },
+    {
+      "text": "Follow for lesson eight!",
+      "caps": "*FOLLOW | FOR LESSON *EIGHT"
+    }
+  ]
+}
