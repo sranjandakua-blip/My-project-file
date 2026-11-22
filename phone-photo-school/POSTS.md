@@ -1,25 +1,96 @@
-# Phone Photo School: post copy (Lessons 1–5, 25-second versions)
+# Phone Photo School: Instagram captions (Lessons 01–05)
 
-Upload each MP4 as a Reel. Use the cover JPG next to it in `renders/` as the cover image.
+Upload each MP4 as a Reel and pick the cover from inside the video (the lesson-number card works well).
 
 ---
-## Lesson 01: The Grid · `ep01-grid/renders/ep01-grid.mp4`
-**Caption:** Lesson 01 📐 Turn on grid lines (Camera settings → General → Composition guide → Grid lines and level) and put your subject where the lines cross, not dead center. Keep the horizon on a line too, never through the middle. Instantly more balanced photos. Shot on S26 Ultra. Try it and tag me!
-Save this for your next shoot 📌 and follow for Lesson 02.
-**Hashtags:** #phonephotography #ruleofthirds #mobilephotography #photographytips #galaxys26ultra #photographyforbeginners #shotonsamsung #learnphotography
 
-## Lesson 02: Tap to Focus · `ep02-tap-to-focus/renders/ep02-tap-to-focus.mp4`
-**Caption:** Lesson 02 🎯 Your phone guesses where to focus, and sometimes it guesses wrong. Tap your subject to focus, then drag the little ☀️ slider: down to save bright skies, up to lift the shadows. Pro tip: press and hold to lock focus and exposure while you reframe 🔒
-**Hashtags:** #phonephotography #taptofocus #exposure #mobilephotography #photographytips #galaxys26ultra #photographyforbeginners #learnphotography
+## Lesson 01 · The Grid
+📐 Phone Photo School · Lesson 01: The Grid
 
-## Lesson 03: Clean Your Lens · `ep03-clean-lens/renders/ep03-clean-lens.mp4`
-**Caption:** Lesson 03 🧼 The easiest upgrade there is. Fingerprints on the lens make lights glow and details go soft. Give it a gentle wipe with a microfiber cloth (not your shirt, which can rub grit into the glass) before every shot.
-**Hashtags:** #phonephotography #mobilephotography #photographytips #cleanyourlens #galaxys26ultra #photographyhacks #photographyforbeginners #learnphotography
+The fastest upgrade to your photos is already hiding in your camera settings.
 
-## Lesson 04: The Zoom Lenses · `ep04-zoom-lenses/renders/ep04-zoom-lenses.mp4`
-**Caption:** Lesson 04 🔭 Four cameras, four jobs. .6x for big landscapes, 1x for everyday shots, 3x for flattering portraits, 5x for far-away details. Tap the zoom buttons instead of pinching. In between, it's often just cropping, and you lose quality.
-**Hashtags:** #phonephotography #zoomlens #telephoto #ultrawide #galaxys26ultra #mobilephotography #photographytips #learnphotography
+On the S26 Ultra: Camera settings → General → Composition guide → turn on "Grid lines and level".
 
-## Lesson 05: Leading Lines · `ep05-leading-lines/renders/ep05-leading-lines.mp4`
-**Caption:** Lesson 05 🛤️ Roads, rails, fences and rivers all pull the eye. So do shadows, staircases and shorelines. Frame them so they run toward your subject, not off the edge. Get low and shoot at .6x to stretch them even more.
-**Hashtags:** #phonephotography #leadinglines #composition #mobilephotography #photographytips #galaxys26ultra #photographyforbeginners #learnphotography
+✅ Put your subject where the lines cross, not dead centre
+✅ Keep the horizon on a line, never through the middle
+
+Every photo in this reel was shot on my S26 Ultra. Try it on your next walk and tag me, I'll share my favourites 📸
+
+💾 Save this for later · Follow for Lesson 02: Tap to Focus
+
+#phonephotography #mobilephotography #ruleofthirds #photographytips #galaxys26ultra #shotonsamsung #photographyforbeginners #composition #learnphotography #thelinseart
+
+---
+
+## Lesson 02 · Tap to Focus
+🎯 Phone Photo School · Lesson 02: Tap to Focus
+
+Blurry subject, sharp background? Your phone guessed wrong.
+
+👆 Tap your subject and it snaps sharp
+☀️ Drag the little sun: down to save bright skies, up to lift the shadows
+🔒 Pro tip: press and hold to lock focus and exposure, so it stays put while you reframe
+
+The kittens, the sunset and the temple at night were all shot on my S26 Ultra.
+
+💾 Save this · Follow for Lesson 03: Clean Your Lens
+
+#phonephotography #taptofocus #exposure #mobilephotography #photographytips #galaxys26ultra #shotonsamsung #nightphotography #learnphotography #thelinseart
+
+---
+
+## Lesson 03 · Clean Your Lens
+🧼 Phone Photo School · Lesson 03: Clean Your Lens
+
+The cheapest upgrade in photography costs nothing.
+
+Fingerprints, pocket dust and lint leave a film on your lens. Lights start to glow and details go soft.
+
+✅ Give it a gentle wipe with a soft microfiber cloth
+❌ Not your shirt: it can rub grit into the glass
+🔁 Make it a habit: one quick wipe before every shot
+
+(The smudge in the reel is simulated. The clean lighthouse shot is the real one, taken on my S26 Ultra.)
+
+💾 Save this · Follow for Lesson 04: The Zoom Lenses
+
+#phonephotography #mobilephotography #photographytips #photographyhacks #galaxys26ultra #shotonsamsung #nightphotography #photographyforbeginners #learnphotography #thelinseart
+
+---
+
+## Lesson 04 · The Zoom Lenses
+🔭 Phone Photo School · Lesson 04: The Zoom Lenses
+
+Your phone has four cameras. Use them!
+
+.6× → huge landscapes and small rooms
+1× → your best all-rounder, especially at night
+3× → flattering portraits
+5× → details far away
+
+Tap the zoom buttons instead of pinching. Pinch to a value in between and you're often just cropping the image, which costs you quality.
+
+Shot on my S26 Ultra 📸
+
+💾 Save this · Follow for Lesson 05: Leading Lines
+
+#phonephotography #zoomlens #telephoto #ultrawide #galaxys26ultra #shotonsamsung #mobilephotography #photographytips #learnphotography #thelinseart
+
+---
+
+## Lesson 05 · Leading Lines
+🛤️ Phone Photo School · Lesson 05: Leading Lines
+
+Want photos that pull people in?
+
+Roads, rails, fences, rivers, shadows, staircases and shorelines all draw the eye.
+
+✅ Line them up so they run toward your subject
+❌ Not off the edge of the frame
+⬇️ Get low and shoot at .6× to stretch those lines even further
+
+Both corridors in this reel were shot on my S26 Ultra. Where's your favourite leading line? Drop it below 👇
+
+💾 Save this · Follow for Lesson 06: Golden Hour
+
+#phonephotography #leadinglines #composition #architecturephotography #mobilephotography #photographytips #galaxys26ultra #shotonsamsung #learnphotography #thelinseart
