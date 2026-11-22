@@ -4,7 +4,7 @@ An Instagram series that teaches phone photography step by step, from the basics
 Each post is a **15-second 9:16 flat-2D animated reel** with an AI voiceover, word-synced captions, sound effects and a quiet music bed.
 Everything is generated in code and costs nothing. No AI images, and no paid APIs.
 
-Finished: Lessons 01–05 (`epNN-*/renders/*.mp4`, each with a cover JPG). Instagram captions and hashtags are in [POSTS.md](POSTS.md).
+Every end card shows the creator avatar (a flat cartoon drawn from the profile photo, `avatar()` in kit.js) above @the_linse_art (`HANDLE` in kit.js). Finished: Lessons 01–05 (`epNN-*/renders/*.mp4`, each with a cover JPG). Instagram captions and hashtags are in [POSTS.md](POSTS.md).
 
 ## Format of every episode (keep it consistent)
 | beat | time | what |

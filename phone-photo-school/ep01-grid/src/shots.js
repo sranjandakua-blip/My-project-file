@@ -130,34 +130,12 @@ export function buildShots() {
     cue(st, 'whoosh'); cue(st + shot, 'shutter'); cue(st + shot + 0.2, 'slide', { dur: 0.5, gain: 0.6 }); cue(st + bal, 'sparkle', { dur: 0.8 });
   }
 
-  // ── 7 · END CARD: follow + next lesson ─────────────────────────────────────────────────
+  // ── 7 · END CARD: follow + handle + next lesson ──
   {
-    const st = cut(6), fol = Wd('follow', 6) - st, two = Wd('two', 6) - st;
-    add({ id: 'S07', at: st, cam: [540, 700], zoom: 0.05, note: 'FOLLOW button, NEXT: LESSON 02 card',
-      draw(lt, d, t) {
-        K.studio(t, C.panel2);
-        K.aperture(540, 470, 190, 0.45 + 0.15 * Math.sin(t * 2), t * 0.6, C.teal);
-        // follow button
-        const sc = eob(seg(lt, fol - 0.1, fol + 0.2)) * (1 + 0.04 * Math.sin(Math.max(0, lt - fol) * 8));
-        if (sc > 0) {
-          ctx.save(); ctx.translate(540, 800); ctx.scale(sc, sc);
-          ctx.fillStyle = C.ink; rr(-260, -78, 520, 168, 84); ctx.fill();
-          ctx.fillStyle = C.yellow; rr(-260, -90, 520, 168, 84); ctx.fill();
-          ctx.fillStyle = C.ink; ctx.font = '900 84px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+ FOLLOW', 0, -4);
-          ctx.restore();
-        }
-        // next lesson card
-        const q = eo(seg(lt, two - 0.1, two + 0.35));
-        if (q > 0) {
-          ctx.save(); ctx.globalAlpha = q; ctx.translate(0, lerp(60, 0, q));
-          ctx.fillStyle = C.panel; rr(150, 960, 780, 200, 36); ctx.fill();
-          ctx.fillStyle = C.teal; ctx.font = '900 40px Inter'; ctx.letterSpacing = '6px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText('NEXT · LESSON 02', 540, 1020); ctx.letterSpacing = '0px';
-          ctx.fillStyle = C.white; ctx.font = '900 62px Inter'; ctx.fillText('TAP TO FOCUS', 540, 1098);
-          ctx.restore();
-        }
-      } });
-    cue(st, 'whoosh'); cue(st + fol, 'pop'); cue(st + two, 'pop', { gain: 0.6 });
+    const st = cut(6);
+    add({ id: 'S07', at: st, cam: [540, 700], zoom: 0.05, note: 'FOLLOW + handle, next: lesson 02',
+      draw: (lt, d, t) => K.endCard(lt, t, Wd('follow', 6) - st, Wd('two', 6) - st, 2, 'TAP TO FOCUS') });
+    cue(st, 'whoosh'); cue(Wd('follow', 6), 'pop'); cue(Wd('two', 6), 'pop', { gain: 0.6 });
   }
 
   // drawn on top of every shot, outside the camera moves (so it never gets cropped)

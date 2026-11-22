@@ -312,6 +312,7 @@ export function print(x, y, w, h, rot, subj, t) {
 }
 
 // ---------- shared episode pieces ----------
+export const HANDLE = '@the_linse_art';                         // shown on every end card
 export const FRAME = { x: 100, y: 300, w: 880, h: 910 };            // the big viewfinder in demo shots
 /** big viewfinder: scene + optional grid + focus brackets at (bx, by) fractions; over(w, h) draws on top in frame coords */
 export function finder(t, sceneOpts = {}, { grid: g = 0, brackets = null, over = null, frame = FRAME } = {}) {
@@ -346,25 +347,30 @@ function bigLabel(text, x, y, size, sc) {
   ctx.lineWidth = size * 0.2; ctx.strokeStyle = C.ink; ctx.strokeText(text, 0, 0); ctx.fillStyle = C.white; ctx.fillText(text, 0, 0); ctx.restore();
 }
 
-/** last shot of every episode: + FOLLOW (pops at fol) and the next-lesson card (at nxt) */
+/** last shot of every episode: creator avatar + handle, + FOLLOW (pops at fol) and the next-lesson card (at nxt) */
 export function endCard(lt, t, fol, nxt, nextN, nextTitle) {
   studio(t, C.panel2);
-  aperture(540, 470, 190, 0.45 + 0.15 * Math.sin(t * 2), t * 0.6, C.teal);
+  avatar(540, 480, 175, eob(seg(lt, 0.05, 0.4)));
+  const hq = eo(seg(lt, 0.25, 0.55));
+  if (hq > 0) {
+    ctx.save(); ctx.globalAlpha = hq; ctx.font = '900 54px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = C.white; ctx.fillText(HANDLE, 540, 725 + lerp(20, 0, hq)); ctx.restore();
+  }
   const sc = eob(seg(lt, fol - 0.1, fol + 0.2)) * (1 + 0.04 * Math.sin(Math.max(0, lt - fol) * 8));
   if (sc > 0) {
-    ctx.save(); ctx.translate(540, 800); ctx.scale(sc, sc);
-    ctx.fillStyle = C.ink; rr(-260, -78, 520, 168, 84); ctx.fill();
-    ctx.fillStyle = C.yellow; rr(-260, -90, 520, 168, 84); ctx.fill();
-    ctx.fillStyle = C.ink; ctx.font = '900 84px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+ FOLLOW', 0, -4);
+    ctx.save(); ctx.translate(540, 865); ctx.scale(sc, sc);
+    ctx.fillStyle = C.ink; rr(-240, -70, 480, 150, 75); ctx.fill();
+    ctx.fillStyle = C.yellow; rr(-240, -80, 480, 150, 75); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.font = '900 76px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+ FOLLOW', 0, -4);
     ctx.restore();
   }
   const q = eo(seg(lt, nxt - 0.1, nxt + 0.35));
   if (q > 0) {
     ctx.save(); ctx.globalAlpha = q; ctx.translate(0, lerp(60, 0, q));
-    ctx.fillStyle = C.panel; rr(150, 960, 780, 200, 36); ctx.fill();
+    ctx.fillStyle = C.panel; rr(150, 995, 780, 190, 36); ctx.fill();
     ctx.fillStyle = C.teal; ctx.font = '900 40px Inter'; ctx.letterSpacing = '6px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(`NEXT · LESSON ${String(nextN).padStart(2, '0')}`, 540, 1020); ctx.letterSpacing = '0px';
-    ctx.fillStyle = C.white; ctx.font = '900 62px Inter'; ctx.fillText(nextTitle, 540, 1098);
+    ctx.fillText(`NEXT · LESSON ${String(nextN).padStart(2, '0')}`, 540, 1050); ctx.letterSpacing = '0px';
+    ctx.fillStyle = C.white; ctx.font = '900 62px Inter'; ctx.fillText(nextTitle, 540, 1125);
     ctx.restore();
   }
 }
@@ -458,4 +464,35 @@ export function leadArrows(lines, p, lw = 12, color = C.yellow) {
     ctx.fillStyle = color; ctx.translate(x, y); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(lw * 2.6, 0); ctx.lineTo(-lw * 1.2, -lw * 2); ctx.lineTo(-lw * 1.2, lw * 2); ctx.closePath();
     ctx.lineWidth = 6; ctx.strokeStyle = C.ink; ctx.stroke(); ctx.fill(); ctx.restore();
   }
+}
+
+/** the creator avatar (flat cartoon from the profile photo: rust beanie, dark puffer jacket, camera up to the eye),
+ *  centre (x, y), radius r, sc = pop-in scale */
+export function avatar(x, y, r, sc = 1) {
+  if (sc <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc * r / 160, sc * r / 160);
+  circle(0, 8, 172, C.ink); circle(0, 0, 172, C.teal);
+  ctx.save(); ctx.beginPath(); ctx.arc(0, 0, 160, 0, TAU); ctx.clip();
+  ctx.fillStyle = '#CFE3EC'; ctx.fillRect(-170, -170, 340, 340);                         // pale wall
+  ctx.fillStyle = '#C8742E'; ctx.fillRect(72, -170, 100, 340);                            // warm wood door
+  ctx.fillStyle = '#A85E22'; ctx.fillRect(96, -170, 7, 340);
+  const skin = '#C98B67', skinD = '#A86F50', jacket = '#2A2326', jacketHi = '#3B3135';
+  ctx.fillStyle = jacket; ctx.beginPath(); ctx.moveTo(-170, 170); ctx.lineTo(-155, 70); ctx.quadraticCurveTo(-120, 30, -55, 26);
+  ctx.lineTo(55, 26); ctx.quadraticCurveTo(120, 30, 155, 70); ctx.lineTo(170, 170); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = jacketHi; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  for (const yy of [92, 132]) { ctx.beginPath(); ctx.moveTo(-150, yy); ctx.quadraticCurveTo(-90, yy - 12, -40, yy + 4); ctx.stroke(); }
+  ell(-6, 32, 40, 14, '#1E191B');                                                         // collar
+  ell(-10, -28, 58, 68, skin); circle(-67, -22, 12, skinD);                              // head + ear
+  ctx.fillStyle = '#B5532E'; ctx.beginPath(); ctx.arc(-10, -52, 66, Math.PI, 0); ctx.lineTo(56, -46); ctx.lineTo(-76, -46); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#9A4325'; rr(-80, -62, 140, 22, 10); ctx.fill();                       // beanie fold
+  ctx.fillStyle = jacket; ctx.beginPath(); ctx.moveTo(30, 170); ctx.lineTo(92, 40); ctx.lineTo(132, 52); ctx.lineTo(96, 170); ctx.fill();     // right arm
+  ctx.beginPath(); ctx.moveTo(-96, 170); ctx.lineTo(-22, 48); ctx.lineTo(22, 58); ctx.lineTo(-36, 170); ctx.fill();                       // left arm
+  ell(14, 40, 48, 20, skinD); ell(14, 36, 44, 17, skin);                                 // left hand under the lens
+  ctx.fillStyle = '#16181D'; rr(-44, -52, 126, 80, 14); ctx.fill(); rr(-22, -66, 42, 20, 6); ctx.fill();   // camera body
+  ctx.fillStyle = '#3A3F4A'; rr(46, -62, 20, 12, 4); ctx.fill();                          // dial
+  circle(28, -10, 42, '#2A2E36'); circle(28, -10, 32, '#0F1115'); circle(28, -10, 19, '#2D3F5E');
+  circle(20, -18, 6, 'rgba(255,255,255,0.75)');
+  ctx.fillStyle = skin; rr(72, -46, 32, 84, 15); ctx.fill();                              // right hand gripping
+  ctx.fillStyle = skinD; for (let i = 0; i < 3; i++) { rr(62, -40 + i * 22, 22, 14, 7); ctx.fill(); }
+  ctx.restore(); ctx.restore();
 }
