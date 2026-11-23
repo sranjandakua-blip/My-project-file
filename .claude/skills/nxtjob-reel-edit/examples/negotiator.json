@@ -1,0 +1,32 @@
+{
+  "_comment": "Negotiator reel (Nov 2026). Paths are relative to this config's directory. Insert times are on the RAW video timeline (seconds).",
+  "source": "drive/IMG_3026.MP4",
+  "source_duration": 54.5,
+  "transcript": "src_tr.txt",
+  "stitch": {
+    "file": "ig/stitch.mp4",
+    "url": "https://www.instagram.com/reel/DcntVmnOYWl/",
+    "end": 10.6,
+    "label": "*Stitch incoming*",
+    "label_y": 1478
+  },
+  "parts": [
+    {"start": 0, "end": 23.65},
+    {"start": 23.65, "end": 41.27, "crop_y": [146, 1774]},
+    {"start": 41.27, "end": 51.27},
+    {"start": 51.27, "end": 54.5, "crop_y": [92, 1828]}
+  ],
+  "agent_crop": [974, 1675, 50, 320],
+  "inserts": [
+    {"name": "b1", "kind": "full", "file": "broll/8909.mp4", "ss": 2.5, "start": 4.00, "end": 6.66, "crop_x": 543, "_words": "make or break your job offer"},
+    {"name": "b2", "kind": "box", "file": "broll/46022.mp4", "ss": 1.5, "start": 12.85, "end": 14.75, "_words": "too scared to negotiate"},
+    {"name": "ova", "kind": "agent", "file": "rec/agent.mp4", "ss": 7.0, "start": 20.90, "end": 23.84, "_words": "agent called Negotiator by NxtJob.ai (42L->60L, chat)"},
+    {"name": "ovb", "kind": "agent", "file": "rec/agent.mp4", "ss": 11.6, "start": 25.70, "end": 29.20, "_words": "budgeted for that role ... builds your counter (revising -> 54L)"},
+    {"name": "b3", "kind": "full", "file": "broll/6022.mp4", "ss": 1.0, "start": 33.40, "end": 35.00, "crop_x": 250, "_words": "rehearse the pushbacks out loud"},
+    {"name": "b4", "kind": "box", "file": "broll/15795.mp4", "ss": 1.3, "start": 38.52, "end": 41.30, "_words": "the number they open with is almost never..."},
+    {"name": "b5", "kind": "full", "file": "broll/46750.mp4", "ss": 5.0, "start": 44.85, "end": 46.60, "crop_x": 500, "_words": "workshop every weekend"}
+  ],
+  "sfx": {"click": "sfx/2585.mp3", "ping": "sfx/2574.mp3", "ping_at": 54.10},
+  "tail": 0.8,
+  "replace": [["Nextjob", "NxtJob"], ["Nxtjob", "NxtJob"], ["Rs", "rupees"]]
+}
