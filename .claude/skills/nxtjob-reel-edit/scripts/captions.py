@@ -53,8 +53,9 @@ words = fixed
 STYLE = cfg.get('caption_style', 'yellow_word')   # client's default since Nov 2026
 SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if STYLE == 'yellow_word':
-    FONT = ImageFont.truetype(os.path.join(SKILL_DIR, 'fonts', 'DMSans-ExtraBold.ttf'), cfg.get('caption_size', 64))
-    MAXLINE = 560
+    SIZE = cfg.get('caption_size', 56)          # client: "font thode chote" -> 56 (was 64)
+    FONT = ImageFont.truetype(os.path.join(SKILL_DIR, 'fonts', 'DMSans-ExtraBold.ttf'), SIZE)
+    MAXLINE = int(560 * SIZE / 64)
 else:
     FONT = ImageFont.truetype('/usr/share/fonts/opentype/inter/Inter-Bold.otf', 46)
     MAXLINE = 380   # px per line (narrow block like the reference)
@@ -103,7 +104,10 @@ LIGHT = (214, 219, 228, 255)
 BOX = (255, 255, 255, 255)
 TOP, LH, GAP, PADX, PADY = cfg.get("caption_top", 388), 56, 8, 9, 5   # caption_top: keep the block just above the head
 asc, desc = FONT.getmetrics()
-YELLOW = (247, 198, 30, 255); WHITE = (255, 255, 255, 255); INK = (17, 17, 20, 255)
+# spoken-word colour: client wants butter yellow (soft, creamy) -> #FFE27A
+_hex = cfg.get('caption_color', '#FFE27A').lstrip('#')
+YELLOW = tuple(int(_hex[i:i + 2], 16) for i in (0, 2, 4)) + (255,)
+WHITE = (255, 255, 255, 255); INK = (17, 17, 20, 255)
 SHADOW = cfg.get('caption_shadow', [5, 7])   # hard shadow offset (px), no blur
 # client rule: hard shadow OR outline — never both
 EFFECT = cfg.get('caption_effect', 'shadow')

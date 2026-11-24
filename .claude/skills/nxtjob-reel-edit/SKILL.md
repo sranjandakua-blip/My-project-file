@@ -13,9 +13,10 @@ recipe; usually only the config changes.
    at the very start, untouched (it already has its own headline + card on black). Add a yellow
    `*Stitch incoming*` label under the card. End on a sentence boundary near MM (check with the transcript).
 2. **Captions — default `"caption_style": "yellow_word"`** (client's choice from the Networker reel on): white
-   DM Sans ExtraBold 64px (bundled in `fonts/`, closest free match to the Instagram Edits font), 1–2 short lines
-   centred **above the head** (`caption_top` ≈ 240, adjust per video), and the **word being spoken turns yellow**
-   `#F7C61E`. Effect is **either a hard (unblurred) drop shadow OR a dark outline — never both** (client rule:
+   DM Sans ExtraBold **56px** (bundled in `fonts/`, closest free match to the Instagram Edits font), 1–2 short lines
+   centred **above the head** (`caption_top` ≈ 240, adjust per video), and the **word being spoken turns butter
+   yellow `#FFE27A`** (client: "font thode chote rakho aur highlight butter yellow me" — was 64px / `#F7C61E`;
+   override with `caption_size` / `caption_color` only if asked). Effect is **either a hard (unblurred) drop shadow OR a dark outline — never both** (client rule:
    "hard shadow hai to outline hata do"). Default `"caption_effect": "shadow"`; use `"outline"` only if asked.
    No captions on the stitch (it has its own) and none while the agent card overlay covers the screen.
    Proofread captions without rendering: `python3 -I S/captions.py W/edit.json --list`.
