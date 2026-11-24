@@ -1,0 +1,132 @@
+{
+  "_comment": "Networker reel (Nov 2026). Stitch = Raj Shamani '3 rules to get rich' (Drive reference file, no IG watermark), cut after rule 2.",
+  "source": "drive/IMG_3110.MP4",
+  "source_duration": 46.43,
+  "transcript": "src_tr.txt",
+  "stitch": {
+    "file": "drive/reference/4_5777365285300341921.mp4",
+    "url": "https://www.instagram.com/reel/DaTBRS6ANNe/",
+    "end": 13.8,
+    "label": "*Stitch incoming*",
+    "label_y": 1545
+  },
+  "parts": [
+    {
+      "start": 0,
+      "end": 46.43
+    }
+  ],
+  "agent_crop": [
+    974,
+    1675,
+    50,
+    320
+  ],
+  "inserts": [
+    {
+      "name": "b1",
+      "kind": "full",
+      "file": "broll/30005.mp4",
+      "ss": 7.0,
+      "start": 4.18,
+      "end": 6.95,
+      "crop_x": 437,
+      "_words": "control over your time and having the right network"
+    },
+    {
+      "name": "b2",
+      "kind": "box",
+      "file": "broll/28889.mp4",
+      "ss": 1.0,
+      "start": 10.54,
+      "end": 13.06,
+      "_words": "trade a huge chunk of your time"
+    },
+    {
+      "name": "ova",
+      "kind": "agent",
+      "file": "rec/agent.mp4",
+      "ss": 9.2,
+      "start": 21.7,
+      "end": 24.86,
+      "_words": "It finds the decision makers at your target companies (hiring-manager list)"
+    },
+    {
+      "name": "ovb",
+      "kind": "agent",
+      "file": "rec/agent.mp4",
+      "ss": 12.9,
+      "start": 24.86,
+      "end": 28.06,
+      "_words": "write something personal for each one (initiating -> message draft)"
+    },
+    {
+      "name": "b3",
+      "kind": "full",
+      "file": "broll/46680.mp4",
+      "ss": 4.0,
+      "start": 30.4,
+      "end": 32.1,
+      "crop_x": 437,
+      "_words": "building the exact network"
+    },
+    {
+      "name": "b4",
+      "kind": "box",
+      "file": "broll/24063.mp4",
+      "ss": 3.0,
+      "start": 33.94,
+      "end": 36.18,
+      "_words": "without spending your entire 5-9"
+    },
+    {
+      "name": "b5",
+      "kind": "full",
+      "file": "broll/22961.mp4",
+      "ss": 1.0,
+      "start": 37.52,
+      "end": 39.68,
+      "crop_x": 335,
+      "_words": "workshop every weekend"
+    }
+  ],
+  "sfx": {
+    "click": "sfx/2585.mp3",
+    "ping": "sfx/2574.mp3",
+    "ping_at": 46.1
+  },
+  "tail": 0.8,
+  "phrase_fix": [
+    [
+      "Well, it question but no,",
+      "Valid question, but no!"
+    ],
+    [
+      "5 -9.",
+      "5-9."
+    ],
+    [
+      "follow -up",
+      "follow-up"
+    ],
+    [
+      "because that's",
+      "Because that's"
+    ]
+  ],
+  "replace": [
+    [
+      "Nextjob",
+      "NxtJob"
+    ],
+    [
+      "Nxtjob",
+      "NxtJob"
+    ],
+    [
+      "Rs",
+      "rupees"
+    ]
+  ],
+  "caption_top": 250
+}

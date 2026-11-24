@@ -37,10 +37,11 @@ for ins in cfg['inserts']:
 label = ST.get('label', '*Stitch incoming*').replace(':', r'\:').replace("'", r"\'")
 stitch_txt = (f"drawtext=fontfile={FONT_B}:text='{label}':fontcolor=0xFFD21F:fontsize=48:"
               f"x=(w-text_w)/2:y={ST.get('label_y', 1478)}")
-fc = [f'[0:v]trim=0:{STITCH},setpts=PTS-STARTPTS,fps={FPS},scale={W}:{H},setsar=1,{stitch_txt}[st]']
+FILL = f'scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}'   # never stretch non-9:16 sources
+fc = [f'[0:v]trim=0:{STITCH},setpts=PTS-STARTPTS,fps={FPS},{FILL},setsar=1,{stitch_txt}[st]']
 labels = []
 for k, p in enumerate(cfg['parts']):
-    chain = f"[1:v]trim={p['start']}:{p['end']},setpts=PTS-STARTPTS,fps={FPS},scale={W}:{H}"
+    chain = f"[1:v]trim={p['start']}:{p['end']},setpts=PTS-STARTPTS,fps={FPS},{FILL}"
     if p.get('crop_y'):   # letterboxed take -> crop bars and fill the frame
         y0, y1 = p['crop_y']; hh = y1 - y0; ww = int(round(W * hh / H / 2) * 2)
         chain += f',crop={ww}:{hh}:{(W - ww) // 2}:{y0},scale={W}:{H}:flags=lanczos'

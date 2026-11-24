@@ -27,6 +27,19 @@ for w in words:
             prev[0] += w[0]; prev[2] = w[2]
         continue
     fixed.append(w)
+# phrase_fix: [["heard words ...", "correct words ..."]] — replaces a run of words, spreading the new words
+# evenly over the run's time span (fixes mis-heard phrases and split tokens like "5 -9." / "follow -up")
+for bad, good in cfg.get('phrase_fix', []):
+    bw, gw = bad.split(), good.split()
+    i = 0
+    while i <= len(fixed) - len(bw):
+        if [w[0] for w in fixed[i:i + len(bw)]] == bw:
+            t0, t1 = fixed[i][1], fixed[i + len(bw) - 1][2]
+            step = (t1 - t0) / len(gw)
+            fixed[i:i + len(bw)] = [[g, t0 + k * step, t0 + (k + 1) * step] for k, g in enumerate(gw)]
+            i += len(gw)
+        else:
+            i += 1
 REPL = cfg.get('replace', [])
 for w in fixed:
     for a, b in REPL:
@@ -70,7 +83,7 @@ TEXT = (62, 72, 92, 255)     # slate
 DIM = (62, 72, 92, 235)
 LIGHT = (214, 219, 228, 255)
 BOX = (255, 255, 255, 255)
-TOP, LH, GAP, PADX, PADY = 388, 56, 8, 9, 5
+TOP, LH, GAP, PADX, PADY = cfg.get("caption_top", 388), 56, 8, 9, 5   # caption_top: keep the block just above the head
 asc, desc = FONT.getmetrics()
 def render(t, dark=False):
     g = next((g for g in groups if g[0] <= t < g[1]), None)
