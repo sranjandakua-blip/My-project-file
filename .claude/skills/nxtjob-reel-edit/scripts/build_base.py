@@ -15,6 +15,7 @@ cw, ch, cx0, cy0 = cfg.get('agent_crop', [974, 1675, 50, 320])
 paths = []
 for ins in cfg['inserts']:
     dur = ins['end'] - ins['start']; kind = ins['kind']
+    sp = ins.get('speed', 1.0)   # >1 plays faster (use to fit a full agent-card demo loop into the spoken span)
     if kind == 'full':      # 9:16 crop from a 16:9 clip, scaled to fill
         cx = ins.get('crop_x', 437)
         vf = f'crop=ih*9/16:ih:{cx}*iw/1280:0,scale={W}:{H}:flags=lanczos,setsar=1'
@@ -26,8 +27,8 @@ for ins in cfg['inserts']:
     else: raise SystemExit('unknown kind ' + kind)
     if kind == 'agent':
         out = f"build/{ins['name']}.mov"
-        run(['ffmpeg', '-v', 'error', '-y', '-ss', str(ins['ss']), '-i', ins['file'], '-t', f'{dur:.3f}', '-vf', vf,
-             '-r', str(FPS), '-an', '-c:v', 'prores_ks', '-profile:v', '4444', out])
+        run(['ffmpeg', '-v', 'error', '-y', '-ss', str(ins['ss']), '-i', ins['file'], '-t', f'{dur * sp:.3f}',
+             '-vf', f'setpts=PTS/{sp},' + vf, '-r', str(FPS), '-an', '-c:v', 'prores_ks', '-profile:v', '4444', out])
     else:
         out = f"build/{ins['name']}.mp4"
         run(['ffmpeg', '-v', 'error', '-y', '-ss', str(ins['ss']), '-i', ins['file'], '-t', f'{dur:.3f}', '-vf', vf, '-an', *ENC, out])
@@ -37,10 +38,13 @@ for ins in cfg['inserts']:
 label = ST.get('label', '*Stitch incoming*').replace(':', r'\:').replace("'", r"\'")
 stitch_txt = (f"drawtext=fontfile={FONT_B}:text='{label}':fontcolor=0xFFD21F:fontsize=48:"
               f"x=(w-text_w)/2:y={ST.get('label_y', 1478)}")
-fc = [f'[0:v]trim=0:{STITCH},setpts=PTS-STARTPTS,fps={FPS},scale={W}:{H},setsar=1,{stitch_txt}[st]']
+FILL = f'scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}'   # never stretch non-9:16 sources
+# stitch.delogo: [x, y, w, h] in the stitch clip's own pixels — blurs out a channel logo/watermark
+DL = ''.join(f'delogo=x={x}:y={y}:w={w}:h={h},' for x, y, w, h in ST.get('delogo', []))
+fc = [f'[0:v]trim=0:{STITCH},setpts=PTS-STARTPTS,{DL}fps={FPS},{FILL},setsar=1,{stitch_txt}[st]']
 labels = []
 for k, p in enumerate(cfg['parts']):
-    chain = f"[1:v]trim={p['start']}:{p['end']},setpts=PTS-STARTPTS,fps={FPS},scale={W}:{H}"
+    chain = f"[1:v]trim={p['start']}:{p['end']},setpts=PTS-STARTPTS,fps={FPS},{FILL}"
     if p.get('crop_y'):   # letterboxed take -> crop bars and fill the frame
         y0, y1 = p['crop_y']; hh = y1 - y0; ww = int(round(W * hh / H / 2) * 2)
         chain += f',crop={ww}:{hh}:{(W - ww) // 2}:{y0},scale={W}:{H}:flags=lanczos'

@@ -18,8 +18,14 @@ recipe; usually only the config changes.
    stitch (it has its own) and none while the agent card overlay covers the screen.
 3. **Overlays + B-roll.**
    - Screen-record the agent being discussed from https://nxtjob.ai (the "Meet your 9 AI Agent Taskforce"
-     carousel) and overlay it whenever the agent / its features are described (usually 2 overlays of ~3 s,
-     showing different stages of the card's animation).
+     carousel) and overlay it while the agent / its features are described.
+   - **Show the agent card's COMPLETE demo** (creator's rule since the Networker reel): one full cycle of the
+     card's animation, from its first stage to its last (e.g. Networker: search → "Identifying hiring
+     managers" → suggested list → "Initiating message" → drafted message), not a 3 s slice. Record at least
+     two loops (`record_agent.js ... 30`) so a full cycle starting at stage 1 is available, find the cycle
+     start/length on a contact sheet, and play it as one continuous overlay over the agent explanation. If
+     the spoken span is shorter than the loop, set `"speed"` on the insert (up to ~1.5) so it still finishes;
+     if longer, extend the overlay or follow it with a second, different-stage overlay.
    - Add 5–6 job-related stock B-rolls to break monotony, ~1.5–3 s each, never back-to-back. Mix full-screen
      9:16 crops and "16:9 card on black" (captions stay visible above the card).
 4. **Only two sound effects:** a mouse click whenever an overlay/B-roll appears, and a notification ping where
@@ -39,7 +45,7 @@ Work in a scratch dir `W`. Scripts are in `scripts/` next to this file (`S`).
    faster-whisper's own decoder.)
 3. **Inspect the raw video**: scene cuts (`select='gt(scene,0.25)'`) and letterboxed takes (measure black bars
    per segment). Letterboxed takes get cropped to fill the frame (`parts[].crop` in the config).
-4. **Record the agent card**: `node S/record_agent.js "<card prompt text>" W/rec` then
+4. **Record the agent card**: `node S/record_agent.js "<card prompt text>" W/rec 30` (≥2 loops) then
    `python3 -I S/frames_to_video.py W/rec W/rec/agent.mp4`. Card prompts start with the agent's name, e.g.
    `"Negotiator, they offered"`, `"Navigator, I've got 14 years"`, `"Hunter, find me"`, `"Interviewer, mock-interview"`.
    Make a contact sheet of `agent.mp4` to find the timestamps of each animation stage (the loop is ~11 s).
@@ -63,4 +69,7 @@ Work in a scratch dir `W`. Scripts are in `scripts/` next to this file (`S`).
 ## Gotchas
 - `rm` with globs on relative dirs is blocked by the sandbox safety check — use fresh directories instead.
 - Screenshots of a Framer page: hide the sticky bottom CTA bar (the record script does this).
+- Channel logo on the stitch clip (e.g. "EI" on Raj Shamani clips): `stitch.delogo: [[x, y, w, h]]` in the clip's own pixels.
+- Non-9:16 raw video is zoomed to fill, which moves the head up: set `caption_top` (e.g. 250) so captions stay above it.
+- Misheard phrases / split tokens: `phrase_fix: [["heard words", "correct words"]]`.
 - Caption text fixes go in the config `replace` list (e.g. Nextjob→NxtJob, merge ".ai", "Rs .199" → "rupees 199").
