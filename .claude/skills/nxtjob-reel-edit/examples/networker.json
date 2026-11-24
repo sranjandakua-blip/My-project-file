@@ -8,7 +8,15 @@
     "url": "https://www.instagram.com/reel/DaTBRS6ANNe/",
     "end": 13.8,
     "label": "*Stitch incoming*",
-    "label_y": 1545
+    "label_y": 1545,
+    "delogo": [
+      [
+        40,
+        388,
+        68,
+        50
+      ]
+    ]
   },
   "parts": [
     {

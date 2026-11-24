@@ -63,4 +63,7 @@ Work in a scratch dir `W`. Scripts are in `scripts/` next to this file (`S`).
 ## Gotchas
 - `rm` with globs on relative dirs is blocked by the sandbox safety check — use fresh directories instead.
 - Screenshots of a Framer page: hide the sticky bottom CTA bar (the record script does this).
+- Channel logo on the stitch clip (e.g. "EI" on Raj Shamani clips): `stitch.delogo: [[x, y, w, h]]` in the clip's own pixels.
+- Non-9:16 raw video is zoomed to fill, which moves the head up: set `caption_top` (e.g. 250) so captions stay above it.
+- Misheard phrases / split tokens: `phrase_fix: [["heard words", "correct words"]]`.
 - Caption text fixes go in the config `replace` list (e.g. Nextjob→NxtJob, merge ".ai", "Rs .199" → "rupees 199").

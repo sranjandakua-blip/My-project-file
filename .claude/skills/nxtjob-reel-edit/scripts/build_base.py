@@ -38,7 +38,9 @@ label = ST.get('label', '*Stitch incoming*').replace(':', r'\:').replace("'", r"
 stitch_txt = (f"drawtext=fontfile={FONT_B}:text='{label}':fontcolor=0xFFD21F:fontsize=48:"
               f"x=(w-text_w)/2:y={ST.get('label_y', 1478)}")
 FILL = f'scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}'   # never stretch non-9:16 sources
-fc = [f'[0:v]trim=0:{STITCH},setpts=PTS-STARTPTS,fps={FPS},{FILL},setsar=1,{stitch_txt}[st]']
+# stitch.delogo: [x, y, w, h] in the stitch clip's own pixels — blurs out a channel logo/watermark
+DL = ''.join(f'delogo=x={x}:y={y}:w={w}:h={h},' for x, y, w, h in ST.get('delogo', []))
+fc = [f'[0:v]trim=0:{STITCH},setpts=PTS-STARTPTS,{DL}fps={FPS},{FILL},setsar=1,{stitch_txt}[st]']
 labels = []
 for k, p in enumerate(cfg['parts']):
     chain = f"[1:v]trim={p['start']}:{p['end']},setpts=PTS-STARTPTS,fps={FPS},{FILL}"
