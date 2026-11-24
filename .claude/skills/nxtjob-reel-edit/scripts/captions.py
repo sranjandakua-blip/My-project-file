@@ -50,7 +50,7 @@ words = fixed
 # caption_style: "highlighter" (slate Inter Bold + white box sweeping, Negotiator reel)
 #                "yellow_word" (white DM Sans ExtraBold, spoken word yellow, dark outline + hard shadow;
 #                 creator's "Pick a style" choice from Nov 2026)
-STYLE = cfg.get('caption_style', 'highlighter')
+STYLE = cfg.get('caption_style', 'yellow_word')   # client's default since Nov 2026
 SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if STYLE == 'yellow_word':
     FONT = ImageFont.truetype(os.path.join(SKILL_DIR, 'fonts', 'DMSans-ExtraBold.ttf'), cfg.get('caption_size', 64))
@@ -105,6 +105,10 @@ TOP, LH, GAP, PADX, PADY = cfg.get("caption_top", 388), 56, 8, 9, 5   # caption_
 asc, desc = FONT.getmetrics()
 YELLOW = (247, 198, 30, 255); WHITE = (255, 255, 255, 255); INK = (17, 17, 20, 255)
 SHADOW = cfg.get('caption_shadow', [5, 7])   # hard shadow offset (px), no blur
+# client rule: hard shadow OR outline — never both
+EFFECT = cfg.get('caption_effect', 'shadow')
+assert EFFECT in ('shadow', 'outline'), 'caption_effect must be "shadow" or "outline"'
+OUTLINE = 3 if EFFECT == 'outline' else 0
 def render_yellow(t):
     g = next((g for g in groups if g[0] <= t < g[1]), None)
     if g is None or any(a <= t < b for a, b in HIDE): return None
@@ -116,9 +120,10 @@ def render_yellow(t):
         y = 10 + li * LH2
         x = (W - tw(' '.join(w[0] for w in l))) / 2
         for w in l:
-            sx, sy = SHADOW
-            d.text((x + sx, y + sy), w[0], font=FONT, fill=INK, stroke_width=3, stroke_fill=INK)
-            d.text((x, y), w[0], font=FONT, fill=YELLOW if w is active else WHITE, stroke_width=3, stroke_fill=INK)
+            if EFFECT == 'shadow':
+                sx, sy = SHADOW
+                d.text((x + sx, y + sy), w[0], font=FONT, fill=INK)
+            d.text((x, y), w[0], font=FONT, fill=YELLOW if w is active else WHITE, stroke_width=OUTLINE, stroke_fill=INK)
             x += tw(w[0] + ' ')
     return im
 

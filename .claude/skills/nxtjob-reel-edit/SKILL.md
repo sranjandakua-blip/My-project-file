@@ -12,14 +12,15 @@ recipe; usually only the config changes.
 1. **Stitch first.** A reel link is given with "Keep the clip till 0:MM". Download it and put its first ~MM seconds
    at the very start, untouched (it already has its own headline + card on black). Add a yellow
    `*Stitch incoming*` label under the card. End on a sentence boundary near MM (check with the transcript).
-2. **Captions** in the Instagram Edits "Classic" look: slate bold sans (Inter Bold 46px, `#3E4A5C`), 1–2 short lines
-   placed **above the head** (~y=388 of 1920), and a **white highlighter box that sweeps word by word** as each
-   word is spoken. Unspoken words are plain slate (light gray when the background is dark). No captions on the
-   stitch (it has its own) and none while the agent card overlay covers the screen.
-   **Alternative look `"caption_style": "yellow_word"`** (creator's "Pick a style" choice, Networker reel):
-   white DM Sans ExtraBold (bundled in `fonts/`, closest free match to the Instagram Edits font), the word being
-   spoken turns yellow `#F7C61E`, dark outline + hard (unblurred) drop shadow. Use `caption_top` ≈ 240.
+2. **Captions — default `"caption_style": "yellow_word"`** (client's choice from the Networker reel on): white
+   DM Sans ExtraBold 64px (bundled in `fonts/`, closest free match to the Instagram Edits font), 1–2 short lines
+   centred **above the head** (`caption_top` ≈ 240, adjust per video), and the **word being spoken turns yellow**
+   `#F7C61E`. Effect is **either a hard (unblurred) drop shadow OR a dark outline — never both** (client rule:
+   "hard shadow hai to outline hata do"). Default `"caption_effect": "shadow"`; use `"outline"` only if asked.
+   No captions on the stitch (it has its own) and none while the agent card overlay covers the screen.
    Proofread captions without rendering: `python3 -I S/captions.py W/edit.json --list`.
+   Older look, only if a video asks for it: `"caption_style": "highlighter"` — slate Inter Bold 46px with a white
+   highlighter box sweeping word by word (the Negotiator reel).
 3. **Overlays + B-roll.**
    - Screen-record the agent being discussed from https://nxtjob.ai (the "Meet your 9 AI Agent Taskforce"
      carousel) and overlay it while the agent / its features are described.
