@@ -47,8 +47,17 @@ for w in fixed:
 words = fixed
 
 # ---- chunk into 1–2 line groups ----
-FONT = ImageFont.truetype('/usr/share/fonts/opentype/inter/Inter-Bold.otf', 46)
-MAXLINE = 380   # px per line (narrow block like the reference)
+# caption_style: "highlighter" (slate Inter Bold + white box sweeping, Negotiator reel)
+#                "yellow_word" (white DM Sans ExtraBold, spoken word yellow, dark outline + hard shadow;
+#                 creator's "Pick a style" choice from Nov 2026)
+STYLE = cfg.get('caption_style', 'highlighter')
+SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if STYLE == 'yellow_word':
+    FONT = ImageFont.truetype(os.path.join(SKILL_DIR, 'fonts', 'DMSans-ExtraBold.ttf'), cfg.get('caption_size', 64))
+    MAXLINE = 560
+else:
+    FONT = ImageFont.truetype('/usr/share/fonts/opentype/inter/Inter-Bold.otf', 46)
+    MAXLINE = 380   # px per line (narrow block like the reference)
 def tw(s): return FONT.getlength(s)
 chunks, cur = [], []
 for i, w in enumerate(words):
@@ -60,6 +69,14 @@ for i, w in enumerate(words):
     full = nxt and tw(txt + ' ' + nxt[0]) > 2 * MAXLINE - 60
     if not nxt or end_sent or full or (pause and len(cur) >= 2) or (w[0][-1] == ',' and len(cur) >= 4):
         chunks.append(cur); cur = []
+# don't leave a single word stranded in its own caption: glue it onto the previous chunk when it fits
+k = 1
+while k < len(chunks):
+    if len(chunks[k]) == 1 and chunks[k - 1][-1][0][-1] not in '.?!' and \
+            tw(' '.join(x[0] for x in chunks[k - 1] + chunks[k])) <= 2 * MAXLINE + 40:
+        chunks[k - 1] += chunks.pop(k)
+    else:
+        k += 1
 def split_lines(ch):
     if tw(' '.join(x[0] for x in ch)) <= MAXLINE: return [ch]
     best = None
@@ -77,6 +94,7 @@ for j, ch in enumerate(chunks):
     end = min(end, ch[-1][2] + 1.2)
     groups.append((start, end, split_lines(ch)))
 for g in groups: print(f'{g[0]:6.2f}-{g[1]:6.2f}', ' / '.join(' '.join(x[0] for x in l) for l in g[2]))
+if '--list' in sys.argv: sys.exit(0)   # proofread the captions without rendering
 
 # ---- render ----
 TEXT = (62, 72, 92, 255)     # slate
@@ -85,7 +103,27 @@ LIGHT = (214, 219, 228, 255)
 BOX = (255, 255, 255, 255)
 TOP, LH, GAP, PADX, PADY = cfg.get("caption_top", 388), 56, 8, 9, 5   # caption_top: keep the block just above the head
 asc, desc = FONT.getmetrics()
+YELLOW = (247, 198, 30, 255); WHITE = (255, 255, 255, 255); INK = (17, 17, 20, 255)
+SHADOW = cfg.get('caption_shadow', [5, 7])   # hard shadow offset (px), no blur
+def render_yellow(t):
+    g = next((g for g in groups if g[0] <= t < g[1]), None)
+    if g is None or any(a <= t < b for a, b in HIDE): return None
+    flat = [w for l in g[2] for w in l]
+    active = max((w for w in flat if w[1] <= t), key=lambda w: w[1], default=None)
+    LH2 = int(FONT.size * 1.22)
+    im = Image.new('RGBA', (W, 300), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    for li, l in enumerate(g[2]):
+        y = 10 + li * LH2
+        x = (W - tw(' '.join(w[0] for w in l))) / 2
+        for w in l:
+            sx, sy = SHADOW
+            d.text((x + sx, y + sy), w[0], font=FONT, fill=INK, stroke_width=3, stroke_fill=INK)
+            d.text((x, y), w[0], font=FONT, fill=YELLOW if w is active else WHITE, stroke_width=3, stroke_fill=INK)
+            x += tw(w[0] + ' ')
+    return im
+
 def render(t, dark=False):
+    if STYLE == 'yellow_word': return render_yellow(t)
     g = next((g for g in groups if g[0] <= t < g[1]), None)
     if g is None or any(a <= t < b for a, b in HIDE): return None
     lines = g[2]

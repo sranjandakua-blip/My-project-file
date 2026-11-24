@@ -16,6 +16,10 @@ recipe; usually only the config changes.
    placed **above the head** (~y=388 of 1920), and a **white highlighter box that sweeps word by word** as each
    word is spoken. Unspoken words are plain slate (light gray when the background is dark). No captions on the
    stitch (it has its own) and none while the agent card overlay covers the screen.
+   **Alternative look `"caption_style": "yellow_word"`** (creator's "Pick a style" choice, Networker reel):
+   white DM Sans ExtraBold (bundled in `fonts/`, closest free match to the Instagram Edits font), the word being
+   spoken turns yellow `#F7C61E`, dark outline + hard (unblurred) drop shadow. Use `caption_top` ≈ 240.
+   Proofread captions without rendering: `python3 -I S/captions.py W/edit.json --list`.
 3. **Overlays + B-roll.**
    - Screen-record the agent being discussed from https://nxtjob.ai (the "Meet your 9 AI Agent Taskforce"
      carousel) and overlay it while the agent / its features are described.
