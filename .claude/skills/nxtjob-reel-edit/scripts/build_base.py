@@ -15,6 +15,7 @@ cw, ch, cx0, cy0 = cfg.get('agent_crop', [974, 1675, 50, 320])
 paths = []
 for ins in cfg['inserts']:
     dur = ins['end'] - ins['start']; kind = ins['kind']
+    sp = ins.get('speed', 1.0)   # >1 plays faster (use to fit a full agent-card demo loop into the spoken span)
     if kind == 'full':      # 9:16 crop from a 16:9 clip, scaled to fill
         cx = ins.get('crop_x', 437)
         vf = f'crop=ih*9/16:ih:{cx}*iw/1280:0,scale={W}:{H}:flags=lanczos,setsar=1'
@@ -26,8 +27,8 @@ for ins in cfg['inserts']:
     else: raise SystemExit('unknown kind ' + kind)
     if kind == 'agent':
         out = f"build/{ins['name']}.mov"
-        run(['ffmpeg', '-v', 'error', '-y', '-ss', str(ins['ss']), '-i', ins['file'], '-t', f'{dur:.3f}', '-vf', vf,
-             '-r', str(FPS), '-an', '-c:v', 'prores_ks', '-profile:v', '4444', out])
+        run(['ffmpeg', '-v', 'error', '-y', '-ss', str(ins['ss']), '-i', ins['file'], '-t', f'{dur * sp:.3f}',
+             '-vf', f'setpts=PTS/{sp},' + vf, '-r', str(FPS), '-an', '-c:v', 'prores_ks', '-profile:v', '4444', out])
     else:
         out = f"build/{ins['name']}.mp4"
         run(['ffmpeg', '-v', 'error', '-y', '-ss', str(ins['ss']), '-i', ins['file'], '-t', f'{dur:.3f}', '-vf', vf, '-an', *ENC, out])
