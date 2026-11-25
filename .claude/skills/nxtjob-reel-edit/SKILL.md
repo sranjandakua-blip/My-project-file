@@ -71,6 +71,9 @@ Work in a scratch dir `W`. Scripts are in `scripts/` next to this file (`S`).
 8. **Build**: `python3 -I S/build_base.py W/edit.json` (≈2 min) then `python3 -I S/captions.py W/edit.json`
    (≈2 min) → `W/build/final.mp4`. Check a contact sheet of key moments and the caption chunk list it prints.
 9. Deliver the mp4 (and loudness: both stitch and voice are normalised to −14 LUFS).
+   **Export file name must include the date of the edit** (client rule): `<Agent>_reel_<YYYY-MM-DD>.mp4`, e.g.
+   `Networker_reel_2026-11-24.mp4`; take the date from `date +%F` on the day you render. For a revision of the same
+   video on the same day add `_v2`, `_v3` (`Networker_reel_2026-11-24_v2.mp4`).
 
 ## Gotchas
 - `rm` with globs on relative dirs is blocked by the sandbox safety check — use fresh directories instead.
