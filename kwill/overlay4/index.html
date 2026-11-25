@@ -200,9 +200,9 @@ window.render=async function(t,f){
  // ----- text overlays (A-roll)
  {const out=eio((t-5.22)/0.3);
   const w=(id,a)=>{const k=eb((t-a)/0.4);sc(id,cl((t-a)/0.1)*(1-out),`translateY(${(1-k)*40-out*60}px)`);$(id).style.display='inline-block'};
-  w('hw1',0.0);w('hw2',0.28);
-  {const a=0.62,k=eo((t-a)/0.18);sc('hw3',cl((t-a)/0.06)*(1-out),`translateY(${-out*60}px) scale(${lerp(1.7,1,k)}) rotate(-2deg)`);$('hw3').style.display='inline-block';
-   const sh=t>a&&t<a+0.25?(1-(t-a)/0.25)*10:0;$('hook').style.transform=`translate(${Math.sin(t*90)*sh}px,${Math.cos(t*70)*sh}px) scale(${1+0.04*cl((t)/0.62)*(t<a?1:0)})`;}
+  w('hw1',0.0);w('hw2',0.38);
+  {const a=0.85,k=eo((t-a)/0.18);sc('hw3',cl((t-a)/0.06)*(1-out),`translateY(${-out*60}px) scale(${lerp(1.7,1,k)}) rotate(-2deg)`);$('hw3').style.display='inline-block';
+   const sh=t>a&&t<a+0.25?(1-(t-a)/0.25)*10:0;$('hook').style.transform=`translate(${Math.sin(t*90)*sh}px,${Math.cos(t*70)*sh}px) scale(${1+0.05*cl((t)/0.85)*(t<a?1:0)})`;}
   document.querySelectorAll('.srow').forEach((r,i)=>{const a=[T.messy,T.full,T.before][i]-0.1;const k=eb((t-a)/0.4);r.style.opacity=cl((t-a)/0.12);r.style.transform=`translateX(${(1-k)*-120}px) scale(${0.85+0.15*k})`});
   $('stack').style.opacity=1-out;$('stack').style.transform=`translateX(${-out*300}px)`;
   $('sline').style.height=`${cl((t-T.full+0.1)/0.3)*102+cl((t-T.before+0.1)/0.3)*102}px`;
@@ -216,10 +216,10 @@ window.render=async function(t,f){
   sc('ctaLink',t>=38.8?cl((t-T.linkc)/0.12):0,`translateY(${Math.sin(Math.max(0,t-T.linkc)*5)*5}px) scale(${kl})`);}
  const imgs=[ar.decode()];if(hasCut)imgs.push(cut.decode());await Promise.all(imgs.map(p=>p.catch(()=>{})));
 };
-window.SFX=[[0.0,'riser',0.62],[0.62,'impact'],[0.0,'pop',0.9],[0.28,'pop',1.05],[T.messy-0.1,'pop',1],[T.full-0.1,'pop',1.25],[T.before-0.1,'pop',1.5],[T.heres,'pop',1.1],
+window.SFX=[[0.85,'impact'],[0.0,'pop',0.9],[0.38,'pop',1.05],[T.messy-0.1,'pop',1],[T.full-0.1,'pop',1.25],[T.before-0.1,'pop',1.5],[T.heres,'pop',1.1],
  [5.84,'logo'],[7.05,'slideup'],[T.proposals-0.12,'flick',1],[T.contracts-0.12,'flick',1.12],[T.payments-0.12,'flick',1.26],[T.invoices-0.12,'flick',1.41],[T.all,'chime',1],
  [11.78,'swipe'],[T.open,'click'],[T.sign,'scribble'],[T.pay,'click'],[T.pay+0.08,'cash'],[T.need,'boop'],
  [18.22,'zip',1],[T.best-0.1,'shimmer'],[20.3,'bloop'],[T.ai,'sparkle'],[T.proposal-0.2,'pop',1],[T.scope-0.15,'tick',1],[T.deliv-0.15,'tick',1.26],[T.pricing-0.15,'tick',1.5],
  [26.5,'shutter'],[26.9,'boop'],[T.tell,'msg'],[T.invoice-0.1,'tick',1],[T.invoice+0.28,'tick',1.26],[T.invoice+0.66,'tick',1.5],[31.45,'zip',-1],
- [T.more-0.3,'pop',1],[T.client3-0.25,'pop',1.3],[33.62,'riser',0.55],[T.just,'typing',T.information+0.9-T.just],[T.builds,'sparkle'],[38.6,'swipe'],[T.free,'chime',1.5],[T.linkc,'pop',1.2]];
+ [T.more-0.3,'pop',1],[T.client3-0.25,'pop',1.3],[T.just,'typing',T.information+0.9-T.just],[T.builds,'sparkle'],[38.6,'swipe'],[T.free,'chime',1.5],[T.linkc,'pop',1.2]];
 </script></body></html>
