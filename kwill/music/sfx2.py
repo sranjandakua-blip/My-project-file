@@ -62,15 +62,25 @@ def shutter(p):
     return x
 G['shutter']=shutter
 G['msg']=lambda p: sweep(800,1600,0.12,1)*np.exp(-tt(0.12)/0.05)*0.7
+def comb(x,delay_s,fb):
+    d=max(1,int(delay_s*SR)); y=x.copy()
+    for i in range(d,len(y)): y[i]+=fb*y[i-d]
+    return y
 def riser(d):
-    t=tt(d); k=t/d
-    noise=rng.standard_normal(len(t)); n_lo=bp(noise,500,3000); n_hi=bp(noise,3000,12000)
-    swell=n_lo*(1-k)*0.6+n_hi*(0.3+k)          # filter opens as it rises
-    f=180*2**(k*2.6)                          # tone climbs ~2.6 octaves
-    ph=2*np.pi*np.cumsum(f)/SR
-    tone=(np.sin(ph)+0.5*np.sin(2*ph)+0.3*np.sin(3*ph)+0.2*np.sin(1.005*ph))*0.5
-    trem=0.65+0.35*np.sin(2*np.pi*np.cumsum(6+30*k**2)/SR)   # tremolo speeds up
-    return (swell*0.7+tone*0.6)*trem*np.clip(k,0.08,1)**1.1
+    # metallic riser: reversed 808-style cymbal + inharmonic metal partials gliding up with ring-mod, through a resonant comb
+    n=int(d*SR); t=tt(d); k=t/d
+    sq=lambda f: np.sign(np.sin(2*np.pi*f*np.arange(int(1.6*SR))/SR))
+    cym=sum(sq(f) for f in (205.3,304.4,369.6,522.7,540.0,800.0))
+    cym=bp(cym+0.6*rng.standard_normal(len(cym)),5000,15000)*np.exp(-np.arange(len(cym))/SR/0.45)
+    rev=cym[::-1][-n:]
+    glide=2**(k*1.6)
+    metal=np.zeros(n)
+    for r,amp in ((1,1),(1.41,.8),(2.13,.7),(2.76,.6),(3.52,.45),(4.07,.4),(5.4,.3)):
+        metal+=amp*np.sin(2*np.pi*np.cumsum(420*r*glide)/SR)
+    metal*=np.sin(2*np.pi*np.cumsum(55*glide)/SR)*0.5+0.5      # ring-mod shimmer
+    metal=comb(metal*0.15,1/(700*1.0),0.55)
+    x=rev/np.abs(rev).max()*0.9+metal/np.abs(metal).max()*0.55
+    return x*np.clip(k,0.03,1)**1.6
 G['riser']=riser
 def typing(d):
     x=np.zeros(int((d+0.1)*SR)); t=0.0
