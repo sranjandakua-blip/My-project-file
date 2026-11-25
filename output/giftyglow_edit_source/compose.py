@@ -15,6 +15,26 @@ FB = '/usr/share/fonts/opentype/inter/Inter-ExtraBold.otf'
 FBL = '/usr/share/fonts/opentype/inter/InterDisplay-Bold.otf'
 FSB = '/usr/share/fonts/opentype/inter/Inter-SemiBold.otf'
 font = lambda p, s: ImageFont.truetype(p, s)
+FD = D + '/fonts/'
+M_BLACK, M_XB, M_SB = FD + 'Montserrat-Black.ttf', FD + 'Montserrat-ExtraBold.ttf', FD + 'Montserrat-SemiBold.ttf'
+PF_I, PF_XI = FD + 'Playfair-BoldItalic.ttf', FD + 'Playfair-XBoldItalic.ttf'
+GOLD2 = (255, 200, 87)
+
+def tracked(d, xy, text, fnt, fill, track=0.12, anchor='mm'):
+    # letter-spaced text centred on xy
+    ws = [d.textlength(ch, font=fnt) for ch in text]
+    tw = sum(ws) + track * fnt.size * (len(text) - 1)
+    x = xy[0] - tw / 2
+    for ch, w in zip(text, ws):
+        d.text((x, xy[1]), ch, font=fnt, fill=fill, anchor='lm'); x += w + track * fnt.size
+
+def soft_text_layer(size, draw_fn, blur=10, sh_alpha=170, off=(0, 6)):
+    # draws text via draw_fn(draw, fill_override) twice: blurred shadow + crisp
+    sh = Image.new('RGBA', size, (0, 0, 0, 0)); draw_fn(ImageDraw.Draw(sh), (0, 0, 0, sh_alpha))
+    sh = sh.filter(ImageFilter.GaussianBlur(blur))
+    top = Image.new('RGBA', size, (0, 0, 0, 0)); draw_fn(ImageDraw.Draw(top), None)
+    out = Image.new('RGBA', size, (0, 0, 0, 0)); out.alpha_composite(sh, off); out.alpha_composite(top)
+    return out
 
 def ease(x):  # easeInOutCubic
     x = min(max(x, 0), 1)
@@ -108,15 +128,16 @@ LOGO_CARD.alpha_composite(lg, (40, 25))
 
 # price sticker
 def price_card():
-    f1, f2 = font(FSB, 40), font(FB, 120)
-    im = Image.new('RGBA', (470, 270), (0, 0, 0, 0))
+    f1, f2 = font(M_SB, 30), font(PF_XI, 130)
+    im = Image.new('RGBA', (440, 270), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    d.rounded_rectangle((0, 0, 469, 269), 40, fill=GOLD + (255,))
-    d.text((235, 62), 'STARTING AT JUST', font=f1, fill=INK, anchor='mm')
-    d.text((235, 170), '₹299', font=f2, fill=INK, anchor='mm')
+    d.rounded_rectangle((0, 0, 439, 269), 40, fill=(255, 250, 240, 255))
+    d.rounded_rectangle((10, 10, 429, 259), 32, outline=GOLD + (255,), width=4)
+    tracked(d, (220, 64), 'STARTING AT JUST', f1, INK, 0.16)
+    d.text((220, 168), '₹299', font=f2, fill=(176, 112, 20), anchor='mm')
     return im.rotate(-4, resample=Image.BICUBIC, expand=True)
 PRICE = price_card()
-URL = pill('giftyglow.com', font(FB, 64), (255, 255, 255), (20, 20, 20, 235), padx=54, pady=30)
+URL = pill('giftyglow.com', font(M_XB, 58), (255, 255, 255), (18, 14, 10, 235), padx=56, pady=30)
 
 # end card static parts
 def end_bg():
@@ -152,31 +173,61 @@ for i, c in enumerate(chunks):
     c_end = chunks[i + 1][0]['s'] if i + 1 < len(chunks) else DUR
     if c_end - c[-1]['e'] > 0.6: c_end = c[-1]['e'] + 0.35
     c.append({'span': (c_start, c_end)})
-CF = font(FB, 84)
+CF = font(M_XB, 76)
+CE = font(PF_XI, 92)
+EMPH = {7, 10, 13, 21, 30, 31, 34, 38, 62}
+for i_, c in enumerate(chunks):
+    for w in c[:-1]:
+        w['emph'] = toks.index(w) in EMPH
 
 def draw_caption(base, t, y=1430):
     for c in chunks:
         s, e = c[-1]['span']
-        if s <= t < e:
-            ws = c[:-1]
-            d = ImageDraw.Draw(base)
-            sp = 22
-            sizes = [d.textbbox((0, 0), w['w'], font=CF) for w in ws]
-            tw = sum(b[2] - b[0] for b in sizes) + sp * (len(ws) - 1)
-            scale_in = (0.85 + 0.15 * eout((t - s) / 0.12)) * min(1, 960 / tw)
-            x = W / 2 - tw / 2 if tw < W - 20 else 10
-            LW = int(max(W, tw + 40)); x += (LW - W) / 2 if tw >= W - 20 else 0
-            layer = Image.new('RGBA', (LW, 220), (0, 0, 0, 0))
-            dl = ImageDraw.Draw(layer)
-            for w, b in zip(ws, sizes):
-                active = w['s'] - 0.03 <= t < max(w['e'], w['s'] + 0.15)
-                col = GOLD if active else (255, 255, 255)
-                dl.text((x - b[0], 110), w['w'], font=CF, fill=col, anchor='ls', stroke_width=9, stroke_fill=(0, 0, 0))
-                x += b[2] - b[0] + sp
-            if scale_in < 1:
-                layer = layer.resize((int(LW * scale_in), int(220 * scale_in)), Image.BICUBIC)
-            base.alpha_composite(layer, (int(W / 2 - layer.width / 2), int(y - layer.height / 2)))
-            return
+        if not (s <= t < e): continue
+        ws = c[:-1]
+        if any(toks.index(w) in (62, 63, 64) for w in ws): return   # shown by sticker / URL pill instead
+        d0 = ImageDraw.Draw(base)
+        sp = 20
+        fl = [CE if w['emph'] else CF for w in ws]
+        lens = [d0.textlength(w['w'], font=f) for w, f in zip(ws, fl)]
+        tw = sum(lens) + sp * (len(ws) - 1)
+        sc = min(1, 980 / tw)
+        LW, LH = int(tw + 80), 240
+        def dr(d, fill):
+            x = 40
+            for w, f, ln in zip(ws, fl, lens):
+                if t >= w['s'] - 0.06:       # word appears as it is spoken
+                    col = fill or (GOLD2 if w['emph'] else (255, 255, 255))
+                    d.text((x, 150), w['w'], font=f, fill=col, anchor='ls')
+                x += ln + sp
+        layer = soft_text_layer((LW, LH), dr, blur=9, sh_alpha=200, off=(0, 5))
+        k = (0.9 + 0.1 * eout((t - s) / 0.15)) * sc
+        layer = layer.resize((max(1, int(LW * k)), max(1, int(LH * k))), Image.BICUBIC)
+        base.alpha_composite(layer, (int(W / 2 - layer.width / 2), int(y - layer.height / 2)))
+        return
+
+def title_serif(base, text, y, t0, t, size=120, col=GOLD2):
+    if t < t0: return
+    a = eout((t - t0) / 0.35)
+    f = font(PF_XI, size)
+    def dr(d, fill):
+        d.text((W / 2, 200), text, font=f, fill=fill or col + (255,), anchor='mm')
+    L = soft_text_layer((W, 400), dr, blur=14, sh_alpha=220, off=(0, 6))
+    if a < 1: L.putalpha(L.getchannel('A').point(lambda v: int(v * a)))
+    base.alpha_composite(L, (0, int(y - 200 + 30 * (1 - a))))
+
+def label(base, text, y, t0, t):
+    # small dark pill with tracked Montserrat caps
+    if t < t0: return
+    f = font(M_XB, 42)
+    d0 = ImageDraw.Draw(base)
+    tw = sum(d0.textlength(ch, font=f) for ch in text) + 0.18 * 42 * (len(text) - 1)
+    im = Image.new('RGBA', (int(tw + 110), 112), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, im.width - 1, 111), 56, fill=(18, 14, 10, 235))
+    d.ellipse((34, 48, 50, 64), fill=GOLD2)
+    tracked(d, (im.width / 2 + 14, 57), text, f, (255, 255, 255), 0.18)
+    scaled_center(base, im, W / 2, y, spring((t - t0) / 0.45))
 
 # ---------- timeline ----------
 # (start, end, kind, params)
@@ -188,10 +239,10 @@ SH = [
     (11.20, 12.90, 'scroll', dict(img='home_full', y0=1550, y1=3500)),
     (12.90, 14.80, 'cust', {}),
     (14.80, 16.55, 'photo1', {}),
-    (16.55, 17.55, 'scroll', dict(img='birthday-lamps', y0=420, y1=900)),
-    (17.55, 18.25, 'zoomin', dict(img='couple-lamps_happy-wedding-day-couple', cx=560, cy=650, z0=1.0, z1=1.35)),
-    (18.25, 18.85, 'scroll', dict(img='couple-lamps', y0=500, y1=900)),
-    (18.85, 20.10, 'scroll', dict(img='festival-religious', y0=250, y1=800)),
+    (16.55, 17.55, 'scroll', dict(img='birthday-lamps', lbl='BIRTHDAYS', y0=420, y1=900)),
+    (17.55, 18.25, 'zoomin', dict(img='couple-lamps_happy-wedding-day-couple', lbl='ANNIVERSARIES', cx=560, cy=650, z0=1.0, z1=1.35)),
+    (18.25, 18.85, 'scroll', dict(img='couple-lamps', lbl='COUPLES', y0=500, y1=900)),
+    (18.85, 20.10, 'scroll', dict(img='festival-religious', lbl='EVERY OCCASION', y0=250, y1=800)),
     (20.10, 22.62, 'face', dict(z0=1.12, z1=1.18, price=20.90, url=21.72)),
     (22.62, DUR + 1, 'end', {}),
 ]
@@ -258,11 +309,25 @@ def frame(t):
         scaled_center(base, ph, W / 2, 790 + 60 * (1 - a), sc)
         scaled_center(base, LOGO_CARD, W / 2, 210, spring((lt - 0.15) / 0.5))
         scaled_center(base, URL, W / 2, 1330, spring((lt - 0.35) / 0.5))
-        d = ImageDraw.Draw(base)
-        if lt > 0.5:
-            d.text((W / 2, 1720), 'Name  •  Date  •  Design', font=font(FSB, 44),
-                   fill=(255, 230, 190, int(255 * eout((lt - 0.5) / 0.4))), anchor='mm')
-    draw_caption(base, t, y=1430 if k != 'end' else 1560)
+        if lt > 0.0:
+            a2 = eout((lt - 0.0) / 0.4)
+            L = Image.new('RGBA', (W, 120), (0, 0, 0, 0))
+            tracked(ImageDraw.Draw(L), (W / 2, 60), 'CREATE YOUR OWN', font(M_SB, 40), (255, 240, 220, 255), 0.3)
+            L.putalpha(L.getchannel('A').point(lambda v: int(v * a2)))
+            base.alpha_composite(L, (0, 1470))
+        title_serif(base, 'personalised gift', 1650, 23.60, t, size=118)
+        if lt > 1.4:
+            a3 = eout((lt - 1.4) / 0.4)
+            L = Image.new('RGBA', (W, 100), (0, 0, 0, 0))
+            tracked(ImageDraw.Draw(L), (W / 2, 50), 'NAME  ·  DATE  ·  DESIGN', font(M_SB, 30), (255, 220, 170, 255), 0.25)
+            L.putalpha(L.getchannel('A').point(lambda v: int(v * a3)))
+            base.alpha_composite(L, (0, 1770))
+    if k == 'face':
+        draw_caption(base, t, y=1430)
+    elif k == 'photo1':
+        title_serif(base, 'truly personal.', 1500, 15.30, t, size=130)
+    elif k in ('scroll', 'zoomin') and 'lbl' in p:
+        label(base, p['lbl'], 1640, s + 0.05, t)
     # fade out last 0.35s
     if t > DUR - 0.35:
         f = (DUR - t) / 0.35
