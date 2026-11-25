@@ -129,7 +129,7 @@ window.render=async function(t,f){
  let arY=0, clipTop=0, clipBot=0;
  const s2in=eio((t-11.78)/0.5), s2out=eio((t-18.22)/0.5), s5in=eio((t-34.18)/0.5), s5out=eio((t-38.6)/0.5);
  const s2=t>=11.7&&t<18.8?s2in*(1-s2out):0, s5=t>=34.1&&t<39.2?s5in*(1-s5out):0;
- arY=620*s2-140*s5; clipTop=960*s2; clipBot=960*s5;
+ arY=620*s2-420*s5; clipTop=960*s2; clipBot=960*s5;
  $('arw').style.clipPath=`inset(${clipTop}px 0 ${clipBot}px 0)`;
  ar.style.transform=`translateY(${arY}px) scale(${z})`;
  $('topP').style.transform=`translateY(${-(1-s2)*980}px)`;$('topP').style.display=s2>0?'block':'none';
@@ -210,7 +210,10 @@ window.render=async function(t,f){
   sc('ctaLink',t>=38.8?cl((t-T.linkc)/0.12):0,`translateY(${Math.sin(Math.max(0,t-T.linkc)*5)*5}px) scale(${kl})`);}
  const imgs=[ar.decode()];if(hasCut)imgs.push(cut.decode());await Promise.all(imgs.map(p=>p.catch(()=>{})));
 };
-window.SFX={whoosh:[5.84,11.78,18.22,20.3,26.5,31.45,34.18,38.6],soft:[7.05,26.9],
- pop:[0.0,0.4,T.messy-0.1,T.full-0.1,T.before-0.1,T.heres,T.proposals-0.12,T.contracts-0.12,T.payments-0.12,T.invoices-0.12,T.all,T.open,T.best,T.ai,T.proposal-0.2,T.scope-0.15,T.deliv-0.15,T.pricing-0.15,T.tell,T.invoice-0.1,T.invoice+0.28,T.invoice+0.66,T.more-0.3,T.client3-0.25,T.builds,T.free,T.linkc],
- click:[T.open,T.pay],ding:[T.pay+0.1,T.need],type:[T.just,T.information+0.9]};
+window.SFX=[[0.0,'impact'],[0.4,'pop',0.9],[T.messy-0.1,'pop',1],[T.full-0.1,'pop',1.25],[T.before-0.1,'pop',1.5],[T.heres,'pop',1.1],
+ [5.84,'logo'],[7.05,'slideup'],[T.proposals-0.12,'flick',1],[T.contracts-0.12,'flick',1.12],[T.payments-0.12,'flick',1.26],[T.invoices-0.12,'flick',1.41],[T.all,'chime',1],
+ [11.78,'swipe'],[T.open,'click'],[T.sign,'scribble'],[T.pay,'click'],[T.pay+0.08,'cash'],[T.need,'boop'],
+ [18.22,'zip',1],[T.best-0.1,'shimmer'],[20.3,'bloop'],[T.ai,'sparkle'],[T.proposal-0.2,'pop',1],[T.scope-0.15,'tick',1],[T.deliv-0.15,'tick',1.26],[T.pricing-0.15,'tick',1.5],
+ [26.5,'shutter'],[26.9,'boop'],[T.tell,'msg'],[T.invoice-0.1,'tick',1],[T.invoice+0.28,'tick',1.26],[T.invoice+0.66,'tick',1.5],[31.45,'zip',-1],
+ [T.more-0.3,'pop',1],[T.client3-0.25,'pop',1.3],[34.0,'riser'],[T.just,'typing',T.information+0.9-T.just],[T.builds,'sparkle'],[38.6,'swipe'],[T.free,'chime',1.5],[T.linkc,'pop',1.2]];
 </script></body></html>
