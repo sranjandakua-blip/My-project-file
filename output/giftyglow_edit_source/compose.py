@@ -1,4 +1,6 @@
 import json, subprocess, sys, math
+sys.path.insert(0, sys.argv[1] if len(sys.argv) > 1 else '.')
+import refcaps
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
 
@@ -229,6 +231,7 @@ def label(base, text, y, t0, t):
     tracked(d, (im.width / 2 + 14, 57), text, f, (255, 255, 255), 0.18)
     scaled_center(base, im, W / 2, y, spring((t - t0) / 0.45))
 
+refcaps.setup(D, W, H, eout, spring)
 # ---------- timeline ----------
 # (start, end, kind, params)
 SH = [
@@ -296,38 +299,13 @@ def frame(t):
     if k == 'face' and 'logo' in p and t >= p['logo']:
         sc = spring((t - p['logo']) / 0.5)
         scaled_center(base, LOGO_CARD, W / 2, 330, sc)
-    if k == 'face' and 'price' in p and t >= p['price']:
-        sc = spring((t - p['price']) / 0.5)
-        scaled_center(base, PRICE, W - 290, 300, sc)
-    if k == 'face' and 'url' in p and t >= p['url']:
-        sc = spring((t - p['url']) / 0.5)
-        scaled_center(base, URL, W / 2, 1610, sc)
     if k == 'end':
         a = eout(lt / 0.45)
         sc = 0.85 + 0.15 * spring(lt / 0.6)
         ph = END_PHOTO
-        scaled_center(base, ph, W / 2, 790 + 60 * (1 - a), sc)
+        scaled_center(base, ph, W / 2, 760 + 60 * (1 - a), sc)
         scaled_center(base, LOGO_CARD, W / 2, 210, spring((lt - 0.15) / 0.5))
-        scaled_center(base, URL, W / 2, 1330, spring((lt - 0.35) / 0.5))
-        if lt > 0.0:
-            a2 = eout((lt - 0.0) / 0.4)
-            L = Image.new('RGBA', (W, 120), (0, 0, 0, 0))
-            tracked(ImageDraw.Draw(L), (W / 2, 60), 'CREATE YOUR OWN', font(M_SB, 40), (255, 240, 220, 255), 0.3)
-            L.putalpha(L.getchannel('A').point(lambda v: int(v * a2)))
-            base.alpha_composite(L, (0, 1470))
-        title_serif(base, 'personalised gift', 1650, 23.60, t, size=118)
-        if lt > 1.4:
-            a3 = eout((lt - 1.4) / 0.4)
-            L = Image.new('RGBA', (W, 100), (0, 0, 0, 0))
-            tracked(ImageDraw.Draw(L), (W / 2, 50), 'NAME  ·  DATE  ·  DESIGN', font(M_SB, 30), (255, 220, 170, 255), 0.25)
-            L.putalpha(L.getchannel('A').point(lambda v: int(v * a3)))
-            base.alpha_composite(L, (0, 1770))
-    if k == 'face':
-        draw_caption(base, t, y=1430)
-    elif k == 'photo1':
-        title_serif(base, 'truly personal.', 1500, 15.30, t, size=130)
-    elif k in ('scroll', 'zoomin') and 'lbl' in p:
-        label(base, p['lbl'], 1640, s + 0.05, t)
+    refcaps.draw(base, t, k, s, e)
     # fade out last 0.35s
     if t > DUR - 0.35:
         f = (DUR - t) / 0.35
