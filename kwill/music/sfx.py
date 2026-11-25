@@ -19,6 +19,18 @@ def pop():
 def click():
     n=int(0.04*SR); t=np.arange(n)/SR
     return (np.sin(2*np.pi*2400*t)*0.5+rng.standard_normal(n)*0.5)*np.exp(-t/0.006)
+def ding():
+    n=int(0.9*SR); t=np.arange(n)/SR
+    return (np.sin(2*np.pi*1568*t)+0.5*np.sin(2*np.pi*2349*t)+0.25*np.sin(2*np.pi*3136*t))*np.exp(-t/0.25)*np.minimum(1,t/0.003)
+def tick():
+    n=int(0.025*SR); t=np.arange(n)/SR
+    return (rng.standard_normal(n)*0.6+np.sin(2*np.pi*3200*t)*0.4)*np.exp(-t/0.004)
+for t in ev.get('soft',[]): put(whoosh(0.6),t-0.25,0.3)
+for t in ev.get('ding',[]): put(ding(),t,0.18)
+ty=ev.get('type',[])
+if len(ty)==2:
+    t=ty[0]
+    while t<ty[1]: put(tick(),t,0.12,pan=rng.uniform(-.3,.3)); t+=rng.uniform(0.045,0.09)
 for t in ev['whoosh']: put(whoosh(),t-0.22,0.55,pan=rng.uniform(-.3,.3))
 for t in ev['pop']: put(pop(),t,0.22,pan=rng.uniform(-.2,.2))
 for t in ev['click']: put(click(),t-0.02,0.35)
