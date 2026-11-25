@@ -62,8 +62,8 @@ def shutter(p):
     return x
 G['shutter']=shutter
 G['msg']=lambda p: sweep(800,1600,0.12,1)*np.exp(-tt(0.12)/0.05)*0.7
-def riser(p):
-    t=tt(0.55); return (sweep(150,900,0.55,2)*0.4+bp(rng.standard_normal(len(t)),1000,6000)*0.5)*(t/0.55)**2
+def riser(d):
+    t=tt(d); return (sweep(140,1100,d,2)*0.45+bp(rng.standard_normal(len(t)),900,7000)*0.55)*(t/d)**2.2
 G['riser']=riser
 def typing(d):
     x=np.zeros(int((d+0.1)*SR)); t=0.0
@@ -71,11 +71,11 @@ def typing(d):
         n=int(0.03*SR); s=bp(rng.standard_normal(n),1500,6000)*np.exp(-tt(0.03)/0.005)*1.5+np.sin(2*np.pi*rng.uniform(180,260)*tt(0.03))*np.exp(-tt(0.03)/0.01)*0.4
         k=int(t*SR); x[k:k+n]+=s[:len(x)-k]; t+=rng.uniform(0.05,0.12)
     return x
-GAIN={'impact':0.5,'pop':0.25,'flick':0.3,'logo':0.35,'slideup':0.25,'chime':0.25,'swipe':0.3,'click':0.35,'scribble':0.22,'cash':0.3,'boop':0.25,'zip':0.3,'shimmer':0.3,'bloop':0.35,'sparkle':0.3,'tick':0.22,'shutter':0.35,'msg':0.25,'riser':0.3,'typing':0.18}
+GAIN={'impact':0.5,'pop':0.25,'flick':0.3,'logo':0.35,'slideup':0.25,'chime':0.25,'swipe':0.3,'click':0.35,'scribble':0.22,'cash':0.3,'boop':0.25,'zip':0.3,'shimmer':0.3,'bloop':0.35,'sparkle':0.3,'tick':0.22,'shutter':0.35,'msg':0.25,'riser':0.38,'typing':0.18}
 for e in ev:
     t,k=e[0],e[1]; p=e[2] if len(e)>2 else 1
     x=typing(p) if k=='typing' else G[k](p)
-    off=-0.5 if k=='riser' else (-0.12 if k in ('swipe','zip') else 0)
+    off=-0.12 if k in ('swipe','zip') else 0
     put(x/max(1e-6,np.abs(x).max()),t+off,GAIN[k],pan=rng.uniform(-.25,.25))
 out=out[:int(DUR*SR)]
 with wave.open(sys.argv[3],'wb') as w:
