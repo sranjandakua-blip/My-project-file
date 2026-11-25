@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8">
 <style>
-@font-face{font-family:Caveat;src:url(fonts/caveat-latin-700-normal.woff2) format('woff2');font-weight:700}
+@font-face{font-family:'Saint';src:url(fonts/mrs-saint-delafield.woff2) format('woff2')}
 :root{--p:#5B35E6;--p2:#7C5CFF;--pl:#EEE9FD;--ink:#16161D;--mute:#6E6B7B;--line:#E6E2EE;--green:#16A34A}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family:Inter,sans-serif;color:var(--ink)}
@@ -102,7 +102,7 @@ $('s4rows').innerHTML=irow.map(r=>`<div class="s4r" style="display:flex;padding:
 $('txt').innerHTML=`
  <div id="hook" style="position:absolute;left:70px;right:130px;top:262px;text-align:center">
   <div class="ov" style="position:static;font-size:104px;font-weight:900;letter-spacing:-2px;line-height:1"><span id="hw1">STOP</span> <span id="hw2">WRITING</span></div>
-  <div class="ov" id="hw3" style="position:static;font-family:Caveat,cursive;font-weight:700;font-size:112px;letter-spacing:0;color:#FFE066;margin-top:-6px">proposals from scratch</div></div>
+  <div class="ov" id="hw3" style="position:static;font-family:Saint,cursive;font-weight:400;font-size:138px;letter-spacing:0;line-height:1;color:#F4CDF2;-webkit-text-stroke:1.3px #F4CDF2;margin-top:-34px;padding-left:24px;text-shadow:0 2px 10px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)">proposals from scratch</div></div>
  <div id="stack" style="position:absolute;left:70px;top:1120px">
   ${[['#FF6B6B','scribble','Messy brief'],['#16A34A','check','Full proposal'],['#F59E0B','cup','Before your coffee gets cold']].map((r,i)=>`<div class="srow row" style="gap:22px;margin-bottom:${i<2?26:0}px"><div class="chip" style="background:${r[0]}">${svg(r[1])}</div><div class="ov" style="position:static;font-size:54px">${r[2]}</div></div>`).join('')}
   <div id="sline" style="position:absolute;left:36px;top:76px;width:5px;height:0;background:rgba(255,255,255,.85);border-radius:3px;z-index:-1"></div></div>
@@ -201,7 +201,7 @@ window.render=async function(t,f){
  {const out=eio((t-5.22)/0.3);
   const w=(id,a)=>{const k=eb((t-a)/0.4);sc(id,cl((t-a)/0.1)*(1-out),`translateY(${(1-k)*40-out*60}px)`);$(id).style.display='inline-block'};
   w('hw1',0.0);w('hw2',0.38);
-  {const a=0.85,k=eo((t-a)/0.18);sc('hw3',cl((t-a)/0.06)*(1-out),`translateY(${-out*60}px) scale(${lerp(1.7,1,k)}) rotate(-2deg)`);$('hw3').style.display='inline-block';
+  {const a=0.85,k=eo((t-a)/0.18);sc('hw3',cl((t-a)/0.06)*(1-out),`translateY(${-out*60}px) scale(${lerp(1.7,1,k)})`);$('hw3').style.display='inline-block';
    const sh=t>a&&t<a+0.25?(1-(t-a)/0.25)*10:0;$('hook').style.transform=`translate(${Math.sin(t*90)*sh}px,${Math.cos(t*70)*sh}px) scale(${1+0.05*cl((t)/0.85)*(t<a?1:0)})`;}
   document.querySelectorAll('.srow').forEach((r,i)=>{const a=[T.messy,T.full,T.before][i]-0.1;const k=eb((t-a)/0.4);r.style.opacity=cl((t-a)/0.12);r.style.transform=`translateX(${(1-k)*-120}px) scale(${0.85+0.15*k})`});
   $('stack').style.opacity=1-out;$('stack').style.transform=`translateX(${-out*300}px)`;
