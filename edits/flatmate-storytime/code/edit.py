@@ -1,0 +1,571 @@
+"""Compositor for the flatmate storytime reel (new-reference style).
+Usage:
+  python3 -I edit.py WORKDIR preview t1 t2 ...   -> WORKDIR/prev/f_<t>.png
+  python3 -I edit.py WORKDIR render              -> WORKDIR/build/video.mp4 (no audio)
+All story times are on the raw-video timeline (seconds)."""
+import sys, os, json, math, random, subprocess
+import numpy as np, cv2
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+
+WD = sys.argv[1]
+P = lambda *a: os.path.join(WD, *a)
+W, H, FPS = 1080, 1920, 30
+SRC_W, SRC_H = 2160, 1214   # x264 4:2:0 rounded the 1215px letterbox crop down to even
+MAIN_END = 89.62            # talking head ends (after "bye")
+FOLLOW_END = MAIN_END + 1.45
+COVER_END = FOLLOW_END + 0.75
+TOTAL = COVER_END
+MAGENTA = (250, 46, 236)    # sampled from the reference
+INK = (22, 22, 24)
+CAP_CY = 1380               # caption block centre (safe zone: clear of bottom 320px & right rail)
+CAP_MAXW = 820
+REGION_H = 1235             # torn cut-out region height (captions sit on paper below)
+
+FONT_SANS = P('fonts', 'Poppins-ExtraBold.ttf')
+FONT_SERIF = P('fonts', 'PlayfairDisplay[wght].ttf')
+FONT_MARK = P('fonts', 'PermanentMarker-Regular.ttf')
+FONT_ANTON = P('fonts', 'Anton-Regular.ttf')
+
+def ease_out_cubic(p): p = min(max(p, 0), 1); return 1 - (1 - p) ** 3
+def ease_out_back(p, c1=1.5):
+    p = min(max(p, 0), 1); c3 = c1 + 1
+    return 1 + c3 * (p - 1) ** 3 + c1 * (p - 1) ** 2
+
+def serif(size, weight=700):
+    f = ImageFont.truetype(FONT_SERIF, size)
+    try: f.set_variation_by_axes([weight])
+    except Exception: pass
+    return f
+
+# ---------------------------------------------------------------- shots (talking head framing)
+CUTS = [  # (start, zoom)  -- raw jump cuts + punch-ins on the beats
+    (0.00, 1.00), (2.98, 1.12), (6.27, 1.00), (12.47, 1.14), (14.09, 1.00), (16.57, 1.00), (18.01, 1.24),
+    (18.75, 1.00), (23.53, 1.12), (28.33, 1.00), (31.37, 1.16), (33.63, 1.00), (38.67, 1.12), (39.95, 1.30),
+    (40.60, 1.00), (44.72, 1.14), (46.00, 1.00), (51.70, 1.00), (52.62, 1.24), (53.22, 1.06), (56.40, 1.00),
+    (60.17, 1.12), (63.53, 1.00), (66.57, 1.12), (69.87, 1.00), (71.93, 1.20), (73.17, 1.00), (74.47, 1.22),
+    (75.59, 1.00), (77.77, 1.14), (79.10, 1.00), (81.18, 1.10), (83.62, 1.00), (86.28, 1.13), (89.03, 1.00),
+]
+faces = json.load(open(P('faces.json')))
+PUNCH = 0.6
+SHOTS = []
+for i, (s, z) in enumerate(CUTS):
+    z = 1 + (z - 1) * PUNCH
+    e = CUTS[i + 1][0] if i + 1 < len(CUTS) else MAIN_END
+    d = [f for f in faces if s <= f[0] < e and f[1] is not None and f[3] > 110]
+    if not d: d = [f for f in faces if abs(f[0] - s) < 2 and f[1] is not None]
+    cx = float(np.median([f[1] for f in d])) * 2.25
+    cy = float(np.median([f[2] for f in d])) * 2.25
+    SHOTS.append(dict(s=s, e=e, z=z, cx=cx, cy=cy))
+
+def shot_at(t):
+    for sh in SHOTS:
+        if sh['s'] <= t < sh['e']: return sh
+    return SHOTS[-1]
+
+grad = np.ones((H, 1, 1), np.float32)
+ys = np.arange(H)
+g = np.clip((ys - 1000) / 520, 0, 1) ** 1.2 * 0.52  # bottom darkening for caption contrast
+grad[:, 0, 0] = 1 - g
+
+def head_frame(t, src):
+    sh = shot_at(t)
+    prog = (t - sh['s']) / max(0.001, sh['e'] - sh['s'])
+    z = sh['z'] * (1 + 0.025 * prog)              # slow push inside every shot
+    ch = SRC_H / z; cw = ch * 9 / 16
+    x0 = min(max(sh['cx'] - cw / 2, 0), SRC_W - cw)
+    y0 = min(max(sh['cy'] - 0.40 * ch, 0), SRC_H - ch)
+    k = H / ch
+    M = np.float32([[k, 0, -x0 * k], [0, k, -y0 * k]])
+    f = cv2.warpAffine(src, M, (W, H), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    return (f.astype(np.float32) * grad).astype(np.uint8)
+
+# ---------------------------------------------------------------- paper background
+def make_paper():
+    im = np.full((H, W, 3), 250, np.uint8)
+    pat = Image.new('L', (W, H), 0); d = ImageDraw.Draw(pat)
+    step = 150
+    for k in range(-H // step - 2, W // step + H // step + 3):
+        x = k * step
+        d.line([(x, 0), (x + H, H)], fill=255, width=2)
+        d.line([(x, 0), (x - H, H)], fill=255, width=2)
+    pat = np.array(pat.filter(ImageFilter.GaussianBlur(1.2))).astype(np.float32) / 255
+    im = im.astype(np.float32) - pat[..., None] * 7
+    im[..., 0] += 2  # tiny cool tint like the reference
+    return np.clip(im, 0, 255).astype(np.uint8)
+PAPER = make_paper()
+
+# ---------------------------------------------------------------- torn-paper masks
+def torn_poly(cx, cy, r, rng, rough=1.0):
+    n = max(28, int(r / 2.2))
+    ang = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    ph = rng.uniform(0, 2 * np.pi, 4)
+    smooth = (0.07 * np.sin(2 * ang + ph[0]) + 0.05 * np.sin(3 * ang + ph[1]) + 0.04 * np.sin(5 * ang + ph[2]))
+    jag = rng.normal(0, 0.018 * rough, n) + (rng.random(n) < 0.12) * rng.uniform(-0.05, 0.05, n) * rough
+    rr = r * (1 + smooth + jag)
+    pts = np.stack([cx + rr * np.cos(ang), cy + rr * np.sin(ang)], 1)
+    return pts.astype(np.int32)
+
+def final_region(seed):
+    rng = np.random.default_rng(seed)
+    m = np.zeros((H, W), np.uint8)
+    cv2.rectangle(m, (-10, -10), (W + 10, REGION_H - 150), 255, -1)
+    x = -60
+    while x < W + 80:                       # cloudy torn bottom edge
+        r = rng.uniform(95, 150)
+        cy = REGION_H - 150 + rng.uniform(-10, 40)
+        cv2.fillPoly(m, [torn_poly(x, cy, r, rng, rough=0.45)], 255, cv2.LINE_AA)
+        x += r * rng.uniform(1.05, 1.45)
+    for _ in range(2):                      # a couple of paper "bites" on the sides
+        side = rng.choice([0, W]); cy = rng.uniform(250, REGION_H - 300)
+        cv2.fillPoly(m, [torn_poly(side, cy, rng.uniform(40, 75), rng)], 0, cv2.LINE_AA)
+    return m
+
+class Torn:
+    def __init__(self, seed):
+        rng = np.random.default_rng(seed)
+        self.final = final_region(seed)
+        self.blobs = []
+        pts = [(rng.uniform(120, W - 120), rng.uniform(150, REGION_H - 250)) for _ in range(13)]
+        for i, (x, y) in enumerate(pts):
+            self.blobs.append(dict(x=x, y=y, t0=rng.uniform(0, 0.22) + (0.0 if i < 3 else 0.05),
+                                   r=rng.uniform(380, 620), seed=int(rng.integers(1e9))))
+        self.cache = {}
+    def mask(self, tau):
+        """tau = seconds since reveal start. Returns float mask 0..1 (H,W)."""
+        if tau >= 0.62:
+            key = 'final'
+        else:
+            key = round(tau * FPS)
+        if key in self.cache: return self.cache[key]
+        if key == 'final':
+            m = self.final.copy()
+        else:
+            m = np.zeros((H, W), np.uint8)
+            for b in self.blobs:
+                p = (tau - b['t0']) / 0.40
+                if p <= 0: continue
+                r = b['r'] * (0.07 + 0.93 * ease_out_cubic(p) ** 1.25)
+                if r < 6: continue
+                rng = np.random.default_rng(b['seed'])
+                cv2.fillPoly(m, [torn_poly(b['x'], b['y'], r, rng, rough=1.4)], 255, cv2.LINE_AA)
+            m = cv2.bitwise_and(m, self.final)
+        mf = m.astype(np.float32) / 255
+        er = cv2.erode(m, np.ones((9, 9), np.uint8)).astype(np.float32) / 255
+        rim = cv2.GaussianBlur(np.clip(mf - er, 0, 1), (0, 0), 1.6)
+        dil = cv2.dilate(m, np.ones((11, 11), np.uint8))
+        sh = cv2.GaussianBlur(dil.astype(np.float32) / 255, (0, 0), 7)
+        out = (mf, rim, sh)
+        self.cache[key] = out
+        return out
+
+# ---------------------------------------------------------------- B-roll inserts
+INSERTS = [
+    dict(s=4.48, e=6.27, clip='12118', ss=14.6, fx=0.48),
+    dict(s=7.45, e=9.20, clip='12822', ss=0.3, fx=0.47),
+    dict(s=10.87, e=12.47, clip='12131', ss=0.6, fx=0.5, fy=0.42),
+    dict(s=19.21, e=21.49, clip='8866', ss=6.0, fx=0.57),
+    dict(s=25.07, e=27.35, clip='32024', ss=3.0, fx=0.5),
+    dict(s=29.45, e=31.37, clip='21338', ss=2.0, fx=0.5, extra='fridge'),
+    dict(s=35.53, e=37.11, clip='42915', ss=0.8, fx=0.5),
+    dict(s=41.58, e=42.80, clip='21769', ss=1.8, fx=0.62),
+    dict(s=47.60, e=49.76, clip='27691', ss=9.0, fx=0.45),
+    dict(s=58.04, e=60.14, clip='42910', ss=1.0, fx=0.45, swap=(58.90, '29385', 10.0, 0.55)),
+    dict(s=61.27, e=63.53, kind='bills'),
+    dict(s=66.57, e=68.41, clip='39780', ss=2.0, fx=0.42, extra='otp'),
+    dict(s=75.59, e=77.77, clip='23466', ss=3.0, fx=0.60),
+    dict(s=81.62, e=83.62, clip='4548', ss=4.0, fx=0.62),
+]
+for i, ins in enumerate(INSERTS):
+    ins['torn'] = Torn(1000 + i * 17)
+RW, RH = 1150, 1330   # clip render size (margin for the slow zoom)
+
+_clip_cache = {}
+def clip_frames(cid, ss, dur, fx, fy):
+    key = (cid, ss)
+    if key in _clip_cache: return _clip_cache[key]
+    path = P('broll', cid + '.mp4')
+    vw, vh = [int(v) for v in subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v', '-show_entries',
+              'stream=width,height', '-of', 'csv=p=0', path], capture_output=True, text=True).stdout.strip().split(',')[:2]]
+    sc = max(RW / vw, RH / vh)
+    sw, sh = int(math.ceil(vw * sc / 2) * 2), int(math.ceil(vh * sc / 2) * 2)
+    x = int(min(max(fx * sw - RW / 2, 0), sw - RW)); y = int(min(max(fy * sh - RH / 2, 0), sh - RH))
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-ss', str(ss), '-i', path, '-t', str(dur + 0.2), '-vf',
+                          f'fps={FPS},scale={sw}:{sh}:flags=lanczos,crop={RW}:{RH}:{x}:{y},eq=saturation=1.05',
+                          '-f', 'rawvideo', '-pix_fmt', 'bgr24', '-'], capture_output=True).stdout
+    fr = np.frombuffer(raw, np.uint8).reshape(-1, RH, RW, 3)
+    _clip_cache.clear(); _clip_cache[key] = fr
+    return fr
+
+def clip_image(ins, t):
+    cid, ss, fx, fy, t0 = ins['clip'], ins['ss'], ins.get('fx', 0.5), ins.get('fy', 0.5), ins['s']
+    if 'swap' in ins and t >= ins['swap'][0]:
+        t0, cid, ss, fx = ins['swap'][0], ins['swap'][1], ins['swap'][2], ins['swap'][3]
+    fr = clip_frames(cid, ss, ins['e'] - t0 + 0.1, fx, fy)
+    i = min(int(round((t - t0) * FPS)), len(fr) - 1)
+    img = fr[i]
+    prog = (t - ins['s']) / (ins['e'] - ins['s'])
+    z = 1.0 + 0.07 * prog
+    x0 = (RW - W / z) / 2; y0 = (RH - REGION_H / z) / 2
+    M = np.float32([[z, 0, -x0 * z], [0, z, -y0 * z]])
+    return cv2.warpAffine(img, M, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+
+# ---------------------------------------------------------------- sprites (PIL -> BGRA numpy)
+def to_bgra(im):
+    a = np.array(im.convert('RGBA'))
+    return a[..., [2, 1, 0, 3]].copy()
+
+def paste(dst, spr, x, y, alpha=1.0):
+    """Alpha-blend BGRA sprite onto BGR uint8 dst with top-left at (x, y)."""
+    h, w = spr.shape[:2]
+    x0, y0, x1, y1 = max(x, 0), max(y, 0), min(x + w, dst.shape[1]), min(y + h, dst.shape[0])
+    if x1 <= x0 or y1 <= y0: return
+    s = spr[y0 - y:y1 - y, x0 - x:x1 - x].astype(np.float32)
+    a = s[..., 3:4] / 255 * alpha
+    d = dst[y0:y1, x0:x1].astype(np.float32)
+    dst[y0:y1, x0:x1] = (d * (1 - a) + s[..., :3] * a).astype(np.uint8)
+
+def paste_scaled(dst, spr, cx, cy, scale, alpha=1.0, angle=0.0):
+    if scale <= 0.02 or alpha <= 0.01: return
+    if abs(scale - 1) > 1e-3 or angle:
+        h, w = spr.shape[:2]
+        M = cv2.getRotationMatrix2D((w / 2, h / 2), angle, scale)
+        nw, nh = int(w * scale * 1.2 + 20), int(h * scale * 1.2 + 20)
+        M[0, 2] += nw / 2 - w / 2; M[1, 2] += nh / 2 - h / 2
+        spr = cv2.warpAffine(spr, M, (nw, nh), flags=cv2.INTER_LINEAR, borderValue=(0, 0, 0, 0))
+    h, w = spr.shape[:2]
+    paste(dst, spr, int(round(cx - w / 2)), int(round(cy - h / 2)), alpha)
+
+# ---------------------------------------------------------------- captions
+def parse_captions():
+    pages = []
+    for ln in open(P('captions.txt'), encoding='utf-8'):
+        ln = ln.strip()
+        if not ln or ln.startswith('#'): continue
+        lines = []
+        for part in ln.split(' / '):
+            toks = []
+            for tok in part.split():
+                word, tm = tok.rsplit('@', 1)
+                s, e = [float(v) for v in tm.split('-')]
+                emph = word.startswith('*')
+                toks.append(dict(text=word.strip('*'), s=s, e=e, emph=emph))
+            lines.append(toks)
+        pages.append(lines)
+    return pages
+
+SANS_SIZE, SERIF_SIZE = 60, 100
+_fonts = {}
+def font_for(emph, size):
+    k = (emph, size)
+    if k not in _fonts:
+        _fonts[k] = serif(size, 700) if emph else ImageFont.truetype(FONT_SANS, size)
+    return _fonts[k]
+
+def word_sprite(text, emph, size, dark):
+    f = font_for(emph, size)
+    l, t, r, b = f.getbbox(text)
+    pad = 26
+    w, h = r - l + pad * 2, b - t + pad * 2
+    col = MAGENTA if emph else (INK if dark else (255, 255, 255))
+    txt = Image.new('L', (w, h), 0)
+    ImageDraw.Draw(txt).text((pad - l, pad - t), text, font=f, fill=255)
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    if not dark:
+        sh = txt.filter(ImageFilter.GaussianBlur(8)).point(lambda v: min(255, int(v * 1.6)))
+        shadow = Image.new('RGBA', (w, h), (0, 0, 0, 0)); shadow.putalpha(sh.point(lambda v: int(v * 0.92)))
+        im = Image.alpha_composite(im, shadow.transform((w, h), Image.AFFINE, (1, 0, 0, 0, 1, -3)))
+        halo = Image.new('RGBA', (w, h), (0, 0, 0, 0)); halo.putalpha(txt.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(2)).point(lambda v: int(v * 0.55)))
+        im = Image.alpha_composite(im, halo)
+    else:
+        sh = txt.filter(ImageFilter.GaussianBlur(5))
+        shadow = Image.new('RGBA', (w, h), (0, 0, 0, 0)); shadow.putalpha(sh.point(lambda v: int(v * 0.18)))
+        im = Image.alpha_composite(im, shadow.transform((w, h), Image.AFFINE, (1, 0, 0, 0, 1, -3)))
+    fill = Image.new('RGBA', (w, h), col + (255,)); fill.putalpha(txt)
+    im = Image.alpha_composite(im, fill)
+    return to_bgra(im), (l - pad, t - pad)
+
+def layout_pages(pages):
+    """Fixed layout per page: every word gets (cx, cy, size)."""
+    out = []
+    for lines in pages:
+        lay = []
+        for toks in lines:
+            sc = 1.0
+            while True:
+                xs, x = [], 0
+                for k, tk in enumerate(toks):
+                    size = int((SERIF_SIZE if tk['emph'] else SANS_SIZE) * sc)
+                    f = font_for(tk['emph'], size)
+                    l, t, r, b = f.getbbox(tk['text'])
+                    if k: x += int((SANS_SIZE * 0.26) * sc)
+                    xs.append((x - l, x + (r - l), size, f))
+                    x += r - l
+                if x <= CAP_MAXW or sc < 0.55: break
+                sc *= 0.92
+            above = max(f.getmetrics()[0] - f.getbbox(tk['text'])[1] for (_, _, _, f), tk in zip(xs, toks))
+            lay.append(dict(toks=toks, xs=xs, width=x, above=above))
+        gap = 24; y = 0; bases = []
+        for i, L in enumerate(lay):
+            y += L['above'] + (0 if i == 0 else gap)
+            bases.append(y)
+        total = bases[-1]
+        y_off = CAP_CY - total / 2 + 10
+        words = []
+        for L, base in zip(lay, bases):
+            x0 = W / 2 - L['width'] / 2
+            for (xa, xb, size, f), tk in zip(L['xs'], L['toks']):
+                asc = f.getmetrics()[0]
+                words.append(dict(tk, size=size, x=x0 + xa, base=y_off + base, asc=asc))
+        out.append(words)
+    return out
+
+PAGES = layout_pages(parse_captions())
+for i, pg in enumerate(PAGES):
+    st = pg[0]['s']; en = pg[-1]['e']
+    nxt = PAGES[i + 1][0]['s'] if i + 1 < len(PAGES) else en + 0.6
+    pg_end = (nxt - 0.04) if nxt - en < 0.9 else en + 0.5
+    for w in pg: w['page_s'], w['page_e'] = st, pg_end
+_spr = {}
+def get_sprite(w, dark):
+    k = (w['text'], w['emph'], w['size'], dark)
+    if k not in _spr: _spr[k] = word_sprite(w['text'], w['emph'], w['size'], dark)
+    return _spr[k]
+
+def draw_captions(frame, t, dark):
+    if t >= MAIN_END: return
+    for pg in PAGES:
+        if not (pg[0]['page_s'] - 0.04 <= t < pg[0]['page_e']): continue
+        for w in pg:
+            tau = t - (w['s'] - 0.04)
+            if tau < 0: continue
+            spr, (ox, oy) = get_sprite(w, dark)
+            p = tau / (0.20 if w['emph'] else 0.15)
+            sc = 0.45 + 0.55 * ease_out_back(p, 1.9 if w['emph'] else 1.4)
+            al = min(1.0, tau / 0.07)
+            if w is pg[0] and pg is PAGES[0] and t < 0.2: sc, al = 1.0, 1.0   # hook frame fully legible
+            h, ww = spr.shape[:2]
+            # sprite top-left at full scale: x + ox, base - asc + ... (PIL draw origin is ascender top)
+            tlx = w['x'] + ox; tly = w['base'] - w['asc'] + oy
+            cx, cy = tlx + ww / 2, tly + h / 2 + (1 - min(1, p)) * 12
+            paste_scaled(frame, spr, cx, cy, sc, al)
+
+# ---------------------------------------------------------------- graphic overlays
+def tape_label(text, w=330, h=118, angle=0):
+    im = Image.new('RGBA', (w + 40, h + 40), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    rng = random.Random(text)
+    pts = []
+    for i in range(12):
+        pts.append((20 + i * w / 11, 20 + rng.uniform(-4, 4)))
+    pts += [(20 + w + rng.uniform(-6, 6), 20 + h / 2)]
+    for i in range(12):
+        pts.append((20 + w - i * w / 11, 20 + h + rng.uniform(-4, 4)))
+    pts += [(20 + rng.uniform(-6, 6), 20 + h / 2)]
+    sh = Image.new('RGBA', im.size, (0, 0, 0, 0)); ImageDraw.Draw(sh).polygon([(x + 4, y + 7) for x, y in pts], fill=(0, 0, 0, 90))
+    im = Image.alpha_composite(im, sh.filter(ImageFilter.GaussianBlur(6)))
+    d = ImageDraw.Draw(im); d.polygon(pts, fill=(242, 228, 196, 245))
+    f = ImageFont.truetype(FONT_MARK, 74)
+    l, t, r, b = f.getbbox(text)
+    d.text((20 + w / 2 - (r - l) / 2 - l, 20 + h / 2 - (b - t) / 2 - t), text, font=f, fill=(200, 20, 40))
+    return to_bgra(im)
+
+def tape_strip(length=980, thick=46):
+    im = Image.new('RGBA', (thick + 30, length + 30), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.rectangle([15, 15, 15 + thick, 15 + length], fill=(242, 228, 196, 235))
+    return to_bgra(im.filter(ImageFilter.GaussianBlur(0.6)))
+
+def rounded(im_size, box, r, fill, d=None):
+    d.rounded_rectangle(box, r, fill=fill)
+
+def bill_card(title, amount, status, col):
+    w, h = 640, 300
+    im = Image.new('RGBA', (w + 60, h + 60), (0, 0, 0, 0))
+    sh = Image.new('RGBA', im.size, (0, 0, 0, 0)); ImageDraw.Draw(sh).rounded_rectangle([34, 40, 34 + w, 40 + h], 28, fill=(0, 0, 0, 70))
+    im = Image.alpha_composite(im, sh.filter(ImageFilter.GaussianBlur(14)))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([30, 30, 30 + w, 30 + h], 28, fill=(255, 255, 255, 255), outline=(225, 225, 230, 255), width=3)
+    d.rounded_rectangle([30, 30, 30 + w, 30 + 78], 28, fill=col + (255,))
+    d.rectangle([30, 80, 30 + w, 108], fill=col + (255,))
+    f1 = ImageFont.truetype(FONT_SANS, 40); f2 = ImageFont.truetype(FONT_SANS, 84); f3 = ImageFont.truetype(FONT_SANS, 34)
+    d.text((62, 44), title, font=f1, fill=(255, 255, 255))
+    d.text((62, 128), amount, font=f2, fill=(25, 25, 30))
+    l, t, r, b = f3.getbbox(status)
+    sx, sy = 30 + w - (r - l) - 70, 30 + h - 78
+    d.rounded_rectangle([sx - 18, sy - 8, sx + (r - l) + 18, sy + (b - t) + 22], 14, outline=(225, 30, 45), width=5)
+    d.text((sx - l, sy - t + 6), status, font=f3, fill=(225, 30, 45))
+    return to_bgra(im)
+
+def otp_banner():
+    w, h = 940, 190
+    im = Image.new('RGBA', (w + 60, h + 60), (0, 0, 0, 0))
+    sh = Image.new('RGBA', im.size, (0, 0, 0, 0)); ImageDraw.Draw(sh).rounded_rectangle([30, 38, 30 + w, 38 + h], 44, fill=(0, 0, 0, 90))
+    im = Image.alpha_composite(im, sh.filter(ImageFilter.GaussianBlur(16)))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([30, 30, 30 + w, 30 + h], 44, fill=(248, 248, 250, 250))
+    d.rounded_rectangle([62, 62, 62 + 86, 62 + 86], 22, fill=(52, 199, 89))
+    d.ellipse([78, 80, 132, 122], fill=(255, 255, 255)); d.polygon([(88, 112), (82, 134), (104, 118)], fill=(255, 255, 255))
+    fa = ImageFont.truetype(FONT_SANS, 30); fb = ImageFont.truetype(P('fonts', 'Poppins-SemiBold.ttf'), 33)
+    d.text((176, 60), 'MESSAGES', font=fa, fill=(120, 120, 128)); d.text((w - 70, 60), 'now', font=fa, fill=(120, 120, 128))
+    d.text((176, 104), 'Your OTP is 482917.', font=ImageFont.truetype(FONT_SANS, 38), fill=(20, 20, 24))
+    d.text((176, 152), 'Do not share it with anyone.', font=fb, fill=(70, 70, 78))
+    return to_bgra(im)
+
+GFX = {}
+def gfx():
+    if not GFX:
+        GFX['mine'] = tape_label('MINE'); GFX['hers'] = tape_label('HERS'); GFX['strip'] = tape_strip()
+        GFX['b1'] = bill_card('ELECTRICITY', '₹2,340', 'DUE TODAY', (245, 166, 35))
+        GFX['b2'] = bill_card('WI-FI', '₹999', 'OVERDUE', (52, 120, 246))
+        GFX['b3'] = bill_card('GAS', '₹860', 'DUE TODAY', (230, 70, 60))
+        GFX['otp'] = otp_banner()
+    return GFX
+
+def pop(t, t0, dur=0.22, c1=1.7):
+    p = (t - t0) / dur
+    if p <= 0: return 0.0, 0.0
+    return 0.4 + 0.6 * ease_out_back(p, c1), min(1.0, p * 3)
+
+def draw_extra(frame, ins, t):
+    G = gfx()
+    if ins.get('extra') == 'fridge':
+        sc, al = pop(t, 29.92); paste_scaled(frame, G['mine'], 300, 380, sc, al, angle=7)
+        sc, al = pop(t, 30.38); paste_scaled(frame, G['hers'], 790, 560, sc, al, angle=-6)
+        p = (t - 30.87) / 0.25
+        if p > 0:
+            strip = G['strip']; L = int(strip.shape[0] * ease_out_cubic(p))
+            if L > 10: paste(frame, strip[:L], W // 2 - strip.shape[1] // 2, 60)
+    if ins.get('extra') == 'otp':
+        p = (t - 66.68) / 0.35
+        if p > 0:
+            spr = G['otp']; y = -260 + (300 - -260) * ease_out_back(p, 1.2)
+            paste(frame, spr, W // 2 - spr.shape[1] // 2, int(y - 60))
+
+def draw_bills(frame, ins, t):
+    G = gfx()
+    tau = t - ins['s']
+    frame[:] = PAPER
+    for k, (key, cx, cy, ang, t0) in enumerate([('b1', 520, 330, -5, 0.05), ('b2', 560, 650, 4, 0.55), ('b3', 515, 965, -3, 1.0)]):
+        sc, al = pop(tau, t0, 0.26, 1.6)
+        paste_scaled(frame, G[key], cx, cy, sc, al, angle=ang)
+
+# ---------------------------------------------------------------- end cards
+def follow_card(tau):
+    im = np.zeros((H, W, 3), np.uint8)
+    lines = ['FOLLOW', 'FOR', 'MORE']
+    f = ImageFont.truetype(FONT_ANTON, 190)
+    for k, s in enumerate(lines):
+        sc, al = pop(tau, 0.08 + k * 0.12, 0.25, 1.6)
+        key = ('follow', s)
+        if key not in _spr:
+            l, t, r, b = f.getbbox(s); pad = 60
+            w, h = r - l + pad * 2, b - t + pad * 2
+            txt = Image.new('L', (w, h), 0); ImageDraw.Draw(txt).text((pad - l, pad - t), s, font=f, fill=255)
+            glow = Image.new('RGBA', (w, h), (255, 30, 50, 0)); glow.putalpha(txt.filter(ImageFilter.GaussianBlur(18)).point(lambda v: int(v * 0.8)))
+            fill = Image.new('RGBA', (w, h), (255, 40, 60, 255)); fill.putalpha(txt)
+            hi = Image.new('RGBA', (w, h), (255, 170, 175, 255)); hi.putalpha(txt.filter(ImageFilter.MinFilter(9)).point(lambda v: int(v * 0.35)))
+            _spr[key] = to_bgra(Image.alpha_composite(Image.alpha_composite(glow, fill), hi))
+        paste_scaled(im, _spr[key], W / 2, 700 + k * 260, sc, al)
+    return im
+
+COVER = None
+def cover_frame(src_frame_at):
+    global COVER
+    if COVER is not None: return COVER
+    base = head_frame(40.2, src_frame_at(40.2))
+    g = cv2.cvtColor(base, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255
+    g = np.clip((g - 0.08) * 1.15, 0, 1) ** 1.1
+    lo, hi = np.array([8, 4, 38], np.float32), np.array([70, 90, 255], np.float32)  # BGR: deep maroon -> hot red
+    im = (lo + (hi - lo) * g[..., None])
+    yy, xx = np.mgrid[0:H, 0:W]
+    vig = 1 - 0.55 * np.clip(((xx - W / 2) / (W * 0.75)) ** 2 + ((yy - H * 0.45) / (H * 0.7)) ** 2, 0, 1)
+    im = np.clip(im * vig[..., None], 0, 255).astype(np.uint8)
+    pil = Image.fromarray(cv2.cvtColor(im, cv2.COLOR_BGR2RGB)).convert('RGBA'); d = ImageDraw.Draw(pil)
+    fs = ImageFont.truetype(FONT_SANS, 50); fa = ImageFont.truetype(FONT_ANTON, 96)
+    t1 = 'THE SHAMPOO BOTTLE STORY'
+    l, t, r, b = fs.getbbox(t1); d.text((W / 2 - (r - l) / 2 - l, 300 - t), t1, font=fs, fill=(255, 255, 255))
+    box_y = 380
+    lines = ['NEVER MOVE IN WITH', 'YOUR BEST FRIEND!']
+    widths = [fa.getbbox(s) for s in lines]
+    bw = max(bb[2] - bb[0] for bb in widths) + 60
+    bh = 2 * 112 + 44
+    d.rectangle([W / 2 - bw / 2, box_y, W / 2 + bw / 2, box_y + bh], fill=(255, 255, 255))
+    for k, (s, bb) in enumerate(zip(lines, widths)):
+        d.text((W / 2 - (bb[2] - bb[0]) / 2 - bb[0], box_y + 24 + k * 112 - bb[1] + 4), s, font=fa, fill=(205, 16, 32))
+    COVER = cv2.cvtColor(np.array(pil.convert('RGB')), cv2.COLOR_RGB2BGR)
+    return COVER
+
+# ---------------------------------------------------------------- frame renderer
+def insert_at(t):
+    for ins in INSERTS:
+        if ins['s'] <= t < ins['e']: return ins
+    return None
+
+def render(t, src_frame_at):
+    if t >= FOLLOW_END:
+        return cover_frame(src_frame_at)
+    if t >= MAIN_END:
+        return follow_card(t - MAIN_END)
+    ins = insert_at(t)
+    if ins is None:
+        fr = head_frame(min(t, 89.5), src_frame_at(min(t, 89.5)))
+        draw_captions(fr, t, dark=False)
+        return fr
+    if ins.get('kind') == 'bills':
+        fr = np.empty((H, W, 3), np.uint8); draw_bills(fr, ins, t)
+        draw_captions(fr, t, dark=True)
+        return fr
+    m, rim, sh = ins['torn'].mask(t - ins['s'])
+    clip = clip_image(ins, t).astype(np.float32)
+    clip *= (1 - 0.55 * rim)[..., None]
+    paper = PAPER.astype(np.float32) * (1 - 0.13 * sh * (1 - m))[..., None]
+    fr = (paper * (1 - m[..., None]) + clip * m[..., None]).astype(np.uint8)
+    draw_extra(fr, ins, t)
+    draw_captions(fr, t, dark=True)
+    return fr
+
+# ---------------------------------------------------------------- sources
+class SeqSource:
+    def __init__(self, path):
+        self.p = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', path, '-f', 'rawvideo', '-pix_fmt', 'bgr24', '-'],
+                                  stdout=subprocess.PIPE, bufsize=SRC_W * SRC_H * 3 * 2)
+        self.i = -1; self.f = None; self.done = False
+    def at(self, t):
+        want = int(round(t * FPS))
+        while self.i < want and not self.done:
+            b = self.p.stdout.read(SRC_W * SRC_H * 3)
+            if len(b) < SRC_W * SRC_H * 3: self.done = True; break
+            self.f = np.frombuffer(b, np.uint8).reshape(SRC_H, SRC_W, 3); self.i += 1
+        return self.f
+
+class SeekSource:
+    def __init__(self, path): self.cap = cv2.VideoCapture(path)
+    def at(self, t):
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, int(round(t * FPS)))
+        ok, f = self.cap.read(); return f
+
+if __name__ == '__main__':
+    mode = sys.argv[2]
+    if mode == 'preview':
+        os.makedirs(P('prev'), exist_ok=True)
+        src = SeekSource(P('sdr_inner.mp4'))
+        for ts in sys.argv[3:]:
+            t = float(ts)
+            cv2.imwrite(P('prev', f'f_{t:06.2f}.png'), render(t, src.at))
+    elif mode == 'render':
+        os.makedirs(P('build'), exist_ok=True)
+        src = SeqSource(P('sdr_inner.mp4'))
+        n = int(round(TOTAL * FPS))
+        enc = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'bgr24', '-s', f'{W}x{H}',
+                                '-r', str(FPS), '-i', '-', '-c:v', 'libx264', '-preset', 'medium', '-crf', '17',
+                                '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
+                                P('build', 'video.mp4')], stdin=subprocess.PIPE)
+        import time; t0 = time.time()
+        for i in range(n):
+            t = i / FPS
+            fr = render(t, src.at)
+            enc.stdin.write(np.ascontiguousarray(fr).tobytes())
+            if i % 150 == 0: print(f'frame {i}/{n} t={t:.1f} {time.time() - t0:.0f}s', flush=True)
+        enc.stdin.close(); enc.wait()
+        print('done', time.time() - t0)
+        json.dump(dict(total=TOTAL, main_end=MAIN_END, follow_end=FOLLOW_END,
+                       inserts=[dict(s=i['s'], e=i['e'], kind=i.get('kind', 'clip'), extra=i.get('extra')) for i in INSERTS]),
+                  open(P('build', 'timeline.json'), 'w'))
