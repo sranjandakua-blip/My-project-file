@@ -33,6 +33,13 @@ Client liked the B-roll but wanted the feel of her previous videos. Kept every B
 - needs `fonts/InstrumentSerif-Regular.ttf`, `stills/me_raw.png` (raw @16.9 s), `stills/her_raw.png` (Mixkit 28201 @6 s),
   sfx 702 / 2894 / 744
 
+## v4 — more funny SFX
+~20 comedy hits from the "500+ Sound Effects" pack (`Funny Sound Effects` folder, id `1QarjMwh-0LglIk_nC2PE0lxj4dWjEXvM`,
+see `assets/500-sound-effects-google-drive.mht`): vine boom, record scratch, coin, dun-dun-dunn, rewind, tabla, sad
+trombone, crickets, evil laugh, etc., each on a specific word (list in `code/mix.py`). `code/prep_sfx.py` trims each file
+to its onset and caps its length; gains are level-matched against the voice (punches about -2 dB, gags about -6, laughs about -8,
+ambience about -12).
+
 ## Rebuild
 Work dir `W` needs: `drive/IMG_3133.MP4`, `fonts/` (Poppins ExtraBold/SemiBold, PlayfairDisplay[wght], Anton,
 PermanentMarker from github.com/google/fonts), `broll/<id>.mp4` (Mixkit `https://assets.mixkit.co/videos/<id>/<id>-720.mp4`,
