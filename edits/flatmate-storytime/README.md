@@ -9,15 +9,16 @@ Output: `Flatmate_storytime_reel_DD-MM-YYYY.mp4`, 1080x1920, 30 fps, 91.8 s, -14
 ## What the edit does
 | Element | New reference | This edit |
 |---|---|---|
-| Frame | full-bleed 9:16 | letterbox removed, 9:16 crop per shot centred on the face (OpenCV face track), punch-ins on beats, slow push in every shot |
+| Frame | full-bleed 9:16 | **client asked to keep the original ratio (v2)**: the 16:9 picture stays centred in the 9:16 frame like the raw; punch-ins/slow push happen inside the 16:9 window (face-tracked) |
 | Colour | SDR | HLG -> BT.709 primaries conversion + light contrast (natural skin, no blown whites) |
-| Story visuals | AI stills, torn-paper blob reveals on white | 13 stock clips revealed with procedural torn-paper blobs on a paper-white background |
+| Story visuals | AI stills, torn-paper blob reveals on white | 13 stock clips revealed with torn-paper blobs on paper-white, inside the 16:9 window |
+| Title | — | "never move in with your *best friend*" in the black band above the picture |
 | Captions | stacked white Poppins + magenta serif emphasis | same: Poppins ExtraBold + Playfair Display (#FA2EEC), word-timed pop-in, hand-romanised Hinglish |
 | Extras | — | MINE/HERS tape labels on the fridge, utility-bill cards, OTP notification, Kotak 811 punch + chime |
 | End | FOLLOW FOR MORE + cover frame | same, cover = red duotone freeze "NEVER MOVE IN WITH YOUR BEST FRIEND!" |
 | Audio | music bed + SFX | cleaned/levelled voice, Mixkit "Lo-Fi 02" bed (lifts on the end card), paper/pop/whoosh SFX |
 
-Safe zones: captions centred at y=1380 (block stays between ~1250 and ~1510), inside x 130-950; nothing
+Safe zones: title centred at y=512, picture at y 656-1264, captions centred at y=1418 in the band below (~1290-1550), inside x 110-970; nothing
 important in the bottom 320 px or the right 120 px rail.
 
 ## Rebuild

@@ -17,9 +17,12 @@ COVER_END = FOLLOW_END + 0.75
 TOTAL = COVER_END
 MAGENTA = (250, 46, 236)    # sampled from the reference
 INK = (22, 22, 24)
-CAP_CY = 1380               # caption block centre (safe zone: clear of bottom 320px & right rail)
-CAP_MAXW = 820
-REGION_H = 1235             # torn cut-out region height (captions sit on paper below)
+# Original layout kept: the 16:9 picture sits centred in the 9:16 frame (as in the raw file).
+WW, WH = 1080, 608          # picture window
+WIN_Y = 656                 # window top (raw letterbox: 1312/3840 -> 656/1920)
+CAP_CY = 1418               # captions in the black band under the picture (above the bottom 320px UI zone)
+CAP_MAXW = 860
+TITLE_CY = 512              # story title in the black band above the picture
 
 FONT_SANS = P('fonts', 'Poppins-ExtraBold.ttf')
 FONT_SERIF = P('fonts', 'PlayfairDisplay[wght].ttf')
@@ -62,32 +65,27 @@ def shot_at(t):
         if sh['s'] <= t < sh['e']: return sh
     return SHOTS[-1]
 
-grad = np.ones((H, 1, 1), np.float32)
-ys = np.arange(H)
-g = np.clip((ys - 1000) / 520, 0, 1) ** 1.2 * 0.52  # bottom darkening for caption contrast
-grad[:, 0, 0] = 1 - g
-
 def head_frame(t, src):
     sh = shot_at(t)
     prog = (t - sh['s']) / max(0.001, sh['e'] - sh['s'])
     z = sh['z'] * (1 + 0.025 * prog)              # slow push inside every shot
-    ch = SRC_H / z; cw = ch * 9 / 16
+    cw, ch = SRC_W / z, SRC_H / z                 # same 16:9 shape, just tighter
     x0 = min(max(sh['cx'] - cw / 2, 0), SRC_W - cw)
-    y0 = min(max(sh['cy'] - 0.40 * ch, 0), SRC_H - ch)
-    k = H / ch
+    y0 = min(max(sh['cy'] - 0.42 * ch, 0), SRC_H - ch)
+    k = WW / cw
     M = np.float32([[k, 0, -x0 * k], [0, k, -y0 * k]])
-    f = cv2.warpAffine(src, M, (W, H), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-    return (f.astype(np.float32) * grad).astype(np.uint8)
+    return cv2.warpAffine(src, M, (WW, WH), flags=cv2.INTER_AREA if k < 0.75 else cv2.INTER_CUBIC,
+                          borderMode=cv2.BORDER_REPLICATE)
 
 # ---------------------------------------------------------------- paper background
 def make_paper():
-    im = np.full((H, W, 3), 250, np.uint8)
-    pat = Image.new('L', (W, H), 0); d = ImageDraw.Draw(pat)
-    step = 150
-    for k in range(-H // step - 2, W // step + H // step + 3):
+    im = np.full((WH, WW, 3), 250, np.uint8)
+    pat = Image.new('L', (WW, WH), 0); d = ImageDraw.Draw(pat)
+    step = 110
+    for k in range(-WH // step - 2, WW // step + WH // step + 3):
         x = k * step
-        d.line([(x, 0), (x + H, H)], fill=255, width=2)
-        d.line([(x, 0), (x - H, H)], fill=255, width=2)
+        d.line([(x, 0), (x + WH, WH)], fill=255, width=2)
+        d.line([(x, 0), (x - WH, WH)], fill=255, width=2)
     pat = np.array(pat.filter(ImageFilter.GaussianBlur(1.2))).astype(np.float32) / 255
     im = im.astype(np.float32) - pat[..., None] * 7
     im[..., 0] += 2  # tiny cool tint like the reference
@@ -107,17 +105,17 @@ def torn_poly(cx, cy, r, rng, rough=1.0):
 
 def final_region(seed):
     rng = np.random.default_rng(seed)
-    m = np.zeros((H, W), np.uint8)
-    cv2.rectangle(m, (-10, -10), (W + 10, REGION_H - 150), 255, -1)
-    x = -60
-    while x < W + 80:                       # cloudy torn bottom edge
-        r = rng.uniform(95, 150)
-        cy = REGION_H - 150 + rng.uniform(-10, 40)
-        cv2.fillPoly(m, [torn_poly(x, cy, r, rng, rough=0.45)], 255, cv2.LINE_AA)
-        x += r * rng.uniform(1.05, 1.45)
-    for _ in range(2):                      # a couple of paper "bites" on the sides
-        side = rng.choice([0, W]); cy = rng.uniform(250, REGION_H - 300)
-        cv2.fillPoly(m, [torn_poly(side, cy, rng.uniform(40, 75), rng)], 0, cv2.LINE_AA)
+    m = np.zeros((WH, WW), np.uint8)
+    ins = 58
+    cv2.rectangle(m, (ins, ins), (WW - ins, WH - ins), 255, -1)
+    def edge(points):
+        for (x, y) in points:
+            r = rng.uniform(34, 62)
+            cv2.fillPoly(m, [torn_poly(x + rng.uniform(-8, 8), y + rng.uniform(-8, 8), r, rng, rough=0.5)], 255, cv2.LINE_AA)
+    edge([(x, ins) for x in np.arange(ins, WW - ins + 1, 52)])            # cloudy torn border on all sides
+    edge([(x, WH - ins) for x in np.arange(ins, WW - ins + 1, 52)])
+    edge([(ins, y) for y in np.arange(ins, WH - ins + 1, 52)])
+    edge([(WW - ins, y) for y in np.arange(ins, WH - ins + 1, 52)])
     return m
 
 class Torn:
@@ -125,10 +123,10 @@ class Torn:
         rng = np.random.default_rng(seed)
         self.final = final_region(seed)
         self.blobs = []
-        pts = [(rng.uniform(120, W - 120), rng.uniform(150, REGION_H - 250)) for _ in range(13)]
+        pts = [(rng.uniform(90, WW - 90), rng.uniform(80, WH - 80)) for _ in range(10)]
         for i, (x, y) in enumerate(pts):
             self.blobs.append(dict(x=x, y=y, t0=rng.uniform(0, 0.22) + (0.0 if i < 3 else 0.05),
-                                   r=rng.uniform(380, 620), seed=int(rng.integers(1e9))))
+                                   r=rng.uniform(230, 400), seed=int(rng.integers(1e9))))
         self.cache = {}
     def mask(self, tau):
         """tau = seconds since reveal start. Returns float mask 0..1 (H,W)."""
@@ -140,7 +138,7 @@ class Torn:
         if key == 'final':
             m = self.final.copy()
         else:
-            m = np.zeros((H, W), np.uint8)
+            m = np.zeros((WH, WW), np.uint8)
             for b in self.blobs:
                 p = (tau - b['t0']) / 0.40
                 if p <= 0: continue
@@ -150,7 +148,7 @@ class Torn:
                 cv2.fillPoly(m, [torn_poly(b['x'], b['y'], r, rng, rough=1.4)], 255, cv2.LINE_AA)
             m = cv2.bitwise_and(m, self.final)
         mf = m.astype(np.float32) / 255
-        er = cv2.erode(m, np.ones((9, 9), np.uint8)).astype(np.float32) / 255
+        er = cv2.erode(m, np.ones((7, 7), np.uint8)).astype(np.float32) / 255
         rim = cv2.GaussianBlur(np.clip(mf - er, 0, 1), (0, 0), 1.6)
         dil = cv2.dilate(m, np.ones((11, 11), np.uint8))
         sh = cv2.GaussianBlur(dil.astype(np.float32) / 255, (0, 0), 7)
@@ -177,7 +175,7 @@ INSERTS = [
 ]
 for i, ins in enumerate(INSERTS):
     ins['torn'] = Torn(1000 + i * 17)
-RW, RH = 1150, 1330   # clip render size (margin for the slow zoom)
+RW, RH = 1120, 630   # clip render size, 16:9 (small margin for the slow zoom)
 
 _clip_cache = {}
 def clip_frames(cid, ss, dur, fx, fy):
@@ -205,9 +203,9 @@ def clip_image(ins, t):
     img = fr[i]
     prog = (t - ins['s']) / (ins['e'] - ins['s'])
     z = 1.0 + 0.07 * prog
-    x0 = (RW - W / z) / 2; y0 = (RH - REGION_H / z) / 2
+    x0 = (RW - WW / z) / 2; y0 = (RH - WH / z) / 2
     M = np.float32([[z, 0, -x0 * z], [0, z, -y0 * z]])
-    return cv2.warpAffine(img, M, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+    return cv2.warpAffine(img, M, (WW, WH), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
 
 # ---------------------------------------------------------------- sprites (PIL -> BGRA numpy)
 def to_bgra(im):
@@ -427,25 +425,45 @@ def pop(t, t0, dur=0.22, c1=1.7):
 def draw_extra(frame, ins, t):
     G = gfx()
     if ins.get('extra') == 'fridge':
-        sc, al = pop(t, 29.92); paste_scaled(frame, G['mine'], 300, 380, sc, al, angle=7)
-        sc, al = pop(t, 30.38); paste_scaled(frame, G['hers'], 790, 560, sc, al, angle=-6)
+        sc, al = pop(t, 29.92); paste_scaled(frame, G['mine'], 300, 190, sc * 0.72, al, angle=7)
+        sc, al = pop(t, 30.38); paste_scaled(frame, G['hers'], 790, 330, sc * 0.72, al, angle=-6)
         p = (t - 30.87) / 0.25
         if p > 0:
-            strip = G['strip']; L = int(strip.shape[0] * ease_out_cubic(p))
-            if L > 10: paste(frame, strip[:L], W // 2 - strip.shape[1] // 2, 60)
+            strip = G['strip']; L = int(min(strip.shape[0], WH - 70) * ease_out_cubic(p))
+            if L > 10: paste(frame, strip[:L], WW // 2 - strip.shape[1] // 2, 35)
     if ins.get('extra') == 'otp':
         p = (t - 66.68) / 0.35
         if p > 0:
-            spr = G['otp']; y = -260 + (300 - -260) * ease_out_back(p, 1.2)
-            paste(frame, spr, W // 2 - spr.shape[1] // 2, int(y - 60))
+            y = -150 + (160 - -150) * ease_out_back(p, 1.2)
+            paste_scaled(frame, G['otp'], WW / 2, y, 0.8)
 
 def draw_bills(frame, ins, t):
     G = gfx()
     tau = t - ins['s']
     frame[:] = PAPER
-    for k, (key, cx, cy, ang, t0) in enumerate([('b1', 520, 330, -5, 0.05), ('b2', 560, 650, 4, 0.55), ('b3', 515, 965, -3, 1.0)]):
+    for k, (key, cx, cy, ang, t0) in enumerate([('b1', 215, 290, -6, 0.05), ('b2', 540, 315, 4, 0.55), ('b3', 865, 290, -4, 1.0)]):
         sc, al = pop(tau, t0, 0.26, 1.6)
-        paste_scaled(frame, G[key], cx, cy, sc, al, angle=ang)
+        paste_scaled(frame, G[key], cx, cy, sc * 0.5, al, angle=ang)
+
+def title_sprite():
+    if 'title' in _spr: return _spr['title']
+    f1 = ImageFont.truetype(FONT_SANS, 50); f2 = serif(96, 700)
+    l1, l2 = 'never move in with your', 'best friend'
+    b1, b2 = f1.getbbox(l1), f2.getbbox(l2)
+    w = max(b1[2] - b1[0], b2[2] - b2[0]) + 80; h = 190 + 60
+    txt1 = Image.new('L', (w, h), 0); ImageDraw.Draw(txt1).text((w / 2 - (b1[2] - b1[0]) / 2 - b1[0], 30 - b1[1]), l1, font=f1, fill=255)
+    txt2 = Image.new('L', (w, h), 0); ImageDraw.Draw(txt2).text((w / 2 - (b2[2] - b2[0]) / 2 - b2[0], 112 - b2[1]), l2, font=f2, fill=255)
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    a = Image.new('RGBA', (w, h), (255, 255, 255, 255)); a.putalpha(txt1)
+    b = Image.new('RGBA', (w, h), MAGENTA + (255,)); b.putalpha(txt2)
+    im = Image.alpha_composite(Image.alpha_composite(im, a), b)
+    _spr['title'] = to_bgra(im)
+    return _spr['title']
+
+def draw_title(frame, t):
+    sc, al = pop(t, 0.0, 0.3, 1.4)
+    if t < 0.1: sc, al = 1.0, 1.0
+    paste_scaled(frame, title_sprite(), W / 2, TITLE_CY, sc, al)
 
 # ---------------------------------------------------------------- end cards
 def follow_card(tau):
@@ -474,15 +492,16 @@ def cover_frame(src_frame_at):
     g = cv2.cvtColor(base, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255
     g = np.clip((g - 0.08) * 1.15, 0, 1) ** 1.1
     lo, hi = np.array([8, 4, 38], np.float32), np.array([70, 90, 255], np.float32)  # BGR: deep maroon -> hot red
-    im = (lo + (hi - lo) * g[..., None])
-    yy, xx = np.mgrid[0:H, 0:W]
-    vig = 1 - 0.55 * np.clip(((xx - W / 2) / (W * 0.75)) ** 2 + ((yy - H * 0.45) / (H * 0.7)) ** 2, 0, 1)
-    im = np.clip(im * vig[..., None], 0, 255).astype(np.uint8)
+    win = (lo + (hi - lo) * g[..., None])
+    yy, xx = np.mgrid[0:WH, 0:WW]
+    vig = 1 - 0.5 * np.clip(((xx - WW / 2) / (WW * 0.7)) ** 2 + ((yy - WH / 2) / (WH * 0.8)) ** 2, 0, 1)
+    im = np.zeros((H, W, 3), np.uint8)
+    im[WIN_Y:WIN_Y + WH] = np.clip(win * vig[..., None], 0, 255).astype(np.uint8)
     pil = Image.fromarray(cv2.cvtColor(im, cv2.COLOR_BGR2RGB)).convert('RGBA'); d = ImageDraw.Draw(pil)
     fs = ImageFont.truetype(FONT_SANS, 50); fa = ImageFont.truetype(FONT_ANTON, 96)
     t1 = 'THE SHAMPOO BOTTLE STORY'
-    l, t, r, b = fs.getbbox(t1); d.text((W / 2 - (r - l) / 2 - l, 300 - t), t1, font=fs, fill=(255, 255, 255))
-    box_y = 380
+    l, t, r, b = fs.getbbox(t1); d.text((W / 2 - (r - l) / 2 - l, 280 - t), t1, font=fs, fill=(255, 255, 255))
+    box_y = 360
     lines = ['NEVER MOVE IN WITH', 'YOUR BEST FRIEND!']
     widths = [fa.getbbox(s) for s in lines]
     bw = max(bb[2] - bb[0] for bb in widths) + 60
@@ -506,20 +525,20 @@ def render(t, src_frame_at):
         return follow_card(t - MAIN_END)
     ins = insert_at(t)
     if ins is None:
-        fr = head_frame(min(t, 89.5), src_frame_at(min(t, 89.5)))
-        draw_captions(fr, t, dark=False)
-        return fr
-    if ins.get('kind') == 'bills':
-        fr = np.empty((H, W, 3), np.uint8); draw_bills(fr, ins, t)
-        draw_captions(fr, t, dark=True)
-        return fr
-    m, rim, sh = ins['torn'].mask(t - ins['s'])
-    clip = clip_image(ins, t).astype(np.float32)
-    clip *= (1 - 0.55 * rim)[..., None]
-    paper = PAPER.astype(np.float32) * (1 - 0.13 * sh * (1 - m))[..., None]
-    fr = (paper * (1 - m[..., None]) + clip * m[..., None]).astype(np.uint8)
-    draw_extra(fr, ins, t)
-    draw_captions(fr, t, dark=True)
+        win = head_frame(min(t, 89.5), src_frame_at(min(t, 89.5)))
+    elif ins.get('kind') == 'bills':
+        win = np.empty((WH, WW, 3), np.uint8); draw_bills(win, ins, t)
+    else:
+        m, rim, sh = ins['torn'].mask(t - ins['s'])
+        clip = clip_image(ins, t).astype(np.float32)
+        clip *= (1 - 0.55 * rim)[..., None]
+        paper = PAPER.astype(np.float32) * (1 - 0.13 * sh * (1 - m))[..., None]
+        win = (paper * (1 - m[..., None]) + clip * m[..., None]).astype(np.uint8)
+        draw_extra(win, ins, t)
+    fr = np.zeros((H, W, 3), np.uint8)
+    fr[WIN_Y:WIN_Y + WH] = win
+    draw_title(fr, t)
+    draw_captions(fr, t, dark=False)
     return fr
 
 # ---------------------------------------------------------------- sources
