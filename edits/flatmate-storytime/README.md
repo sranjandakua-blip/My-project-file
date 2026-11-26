@@ -40,6 +40,15 @@ trombone, crickets, evil laugh, etc., each on a specific word (list in `code/mix
 to its onset and caps its length; gains are level-matched against the voice (punches about -2 dB, gags about -6, laughs about -8,
 ambience about -12).
 
+## v5 — SFX sync + level pass
+- every SFX is tied to a visual event (reveal, pop, zoom, quote appearing, picture shrink); see `EV` in `code/mix.py`
+- `prep_sfx.py` trims all files (Mixkit + pack) to their onset; slow-attack sounds get a `LEAD` pre-roll so the peak
+  lands on the frame (all hits within about 1 frame)
+- gains are computed per hit from the local voice level: punch -6, gag/alert -9, rewind -11, laugh/UI -12,
+  transition -13, ambience -15 dB under the voice; mix.py writes `build/sfx_report.txt` (cue sheet)
+- rewind moved to the flashback shrink at 31.37; bell, Mario and swap pop removed (no visual anchor); added punch-in at
+  3.08 (vine boom), Kotak zoom moved to 74.75 (chime), namak/masala lines pop separately
+
 ## Rebuild
 Work dir `W` needs: `drive/IMG_3133.MP4`, `fonts/` (Poppins ExtraBold/SemiBold, PlayfairDisplay[wght], Anton,
 PermanentMarker from github.com/google/fonts), `broll/<id>.mp4` (Mixkit `https://assets.mixkit.co/videos/<id>/<id>-720.mp4`,

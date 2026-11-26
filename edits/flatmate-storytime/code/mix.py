@@ -1,49 +1,61 @@
-"""Audio mix: voice (cleaned, levelled) + lo-fi bed + SFX -> build/mix.wav (-14 LUFS, -1 dBTP)."""
+"""Audio mix (v5): voice-led (no music bed) + SFX synced to on-screen events and level-matched to the voice.
+Run code/prep_sfx.py first. Output: build/mix.wav at -14 LUFS / -1 dBTP, plus build/sfx_report.txt."""
 import sys, os, subprocess, json
+import numpy as np
 WD = sys.argv[1]; P = lambda *a: os.path.join(WD, *a)
 TOTAL = 89.95
-MAIN_END = 89.95
-MUSIC = False   # old-reference vibe: voice-led, no music bed
 
-reveals = [4.48, 7.45, 10.87, 19.21, 25.07, 29.45, 35.53, 41.58, 47.60, 58.04, 66.57, 75.59, 81.62]
-EV = []  # (time, file, gain_db)
-for i, t in enumerate(reveals):
-    EV.append((t, '2380' if i % 2 == 0 else '1530', -10))
-EV += [
-    (61.27, '166', -12.0), (61.32, '2357', -9.0), (61.82, '2357', -10.0), (62.27, '2357', -9.0),   # bill cards
-    (58.90, '3005', -8.0),                                                                    # khaanewali -> kaamwali swap
-    (29.92, '2364', -13.0), (30.38, '2364', -13.0), (30.87, '1530', -12.0),                       # MINE / HERS / tape
-    (66.68, '2354', -6.0),                                                                    # OTP banner
-    (74.80, '2870', -13.0),                                                                   # Kotak 811
-    (17.15, '2357', -10.0), (17.40, '2357', -10.0),                                             # me / her photos
-    # ---- comedy hits (client: "more funny and engaging sfx") from the 500+ SFX pack
-    (3.08, 'lib_vineboom', -14.5),      # "kabhi bhi" (hook punch)
-    (8.41, 'lib_giggle', -9.8),        # "gossip"
-    (11.33, 'lib_troll', -13.9),        # "naya dost dhoondhna padega"
-    (15.53, 'lib_mystery', -12.1),      # "whole different side"
-    (18.01, 'lib_scratch', -2.3),      # "ex" best friend
-    (21.18, 'lib_coin', -0.7),         # "kharchili aurat"
-    (23.09, 'lib_dundun', -10.2),       # "realise hua"
-    (25.69, 'lib_pakk', -12.2), (26.47, 'lib_pakk', -12.2),   # namak alag... masala alag...
-    (32.23, 'lib_rewind', -3.8),       # "particular incident" (flashback)
-    (38.90, 'lib_suspense', -9.7),     # "and you know what she got..."
-    (39.95, 'lib_vineboom', -10.6),     # "ANNOYED"
-    (44.56, 'lib_whatt', 0.7),        # "...kaise lagne diya?"
-    (46.14, '2894', -12.6),             # "bhai... shampoo bottle hi toh hai" boing
-    (52.62, 'lib_bassdrop', -12.2),     # "bhasad"
-    (53.76, 'lib_bell', -23.3),         # "sorted"
-    (58.18, 'lib_tabla', -13.4), (58.90, 'lib_tabla', -13.4), # khaanewali / kaamwali didi
-    (63.29, 'lib_clock', -4.3),        # "on time"
-    (72.00, 'lib_trombone', -13.0),     # "definitely not my thing"
-    (77.25, 'lib_mario', -16.4),        # "hassle-free"
-    (83.40, 'lib_crickets', -6.2),     # "just live alone"
-    (85.76, 'lib_evillaugh', -8.6),    # "unhinged"
+# Loudness of each hit relative to the voice around it (peak 100 ms RMS, dB). Always under the voice.
+TARGET = {'punch': -6, 'gag': -9, 'alert': -9, 'rewind': -11, 'laugh': -12, 'ui': -12, 'transition': -13, 'ambience': -15}
+
+# (time, sfx key, role, visual anchor) -- every time is the frame the visual event starts in code/edit.py
+EV = [
+    # torn-paper B-roll reveals (INSERTS start)
+    (4.48, 'paper', 'transition', 'reveal: friends walk in'), (7.45, 'slide', 'transition', 'reveal: gossip'),
+    (10.87, 'paper', 'transition', 'reveal: new friend'), (19.21, 'slide', 'transition', 'reveal: shopping bags'),
+    (25.07, 'paper', 'transition', 'reveal: spices'), (29.45, 'slide', 'transition', 'reveal: fridge'),
+    (35.53, 'paper', 'transition', 'reveal: hair wash'), (41.58, 'slide', 'transition', 'reveal: soap bottle'),
+    (47.60, 'paper', 'transition', 'reveal: passport'), (61.27, 'sweep', 'transition', 'bills card board'),
+    (66.57, 'paper', 'transition', 'reveal: phone wake-up'), (75.59, 'slide', 'transition', 'reveal: card payment'),
+    (81.62, 'paper', 'transition', 'reveal: sofa'),
+    # graphics popping in
+    (17.15, 'pop', 'ui', '"me" polaroid'), (17.40, 'pop', 'ui', '"her" polaroid'),
+    (29.92, 'click', 'ui', 'MINE label'), (30.38, 'click', 'ui', 'HERS label'), (30.87, 'slide', 'ui', 'tape strip'),
+    (61.32, 'pop', 'ui', 'electricity bill'), (61.82, 'pop', 'ui', 'wi-fi bill'), (62.27, 'pop', 'ui', 'gas bill'),
+    (66.70, 'msg', 'alert', 'OTP banner'), (74.75, 'chime', 'alert', 'Kotak 811 zoom'),
+    # comedy hits
+    (3.08, 'vineboom', 'gag', 'punch-in on "kabhi bhi"'),
+    (8.41, 'giggle', 'laugh', 'gossip clip whisper'),
+    (11.30, 'troll', 'laugh', 'quote "naya dost dhoondhna padega"'),
+    (15.07, 'mystery', 'ambience', 'quote "a whole different side"'),
+    (18.01, 'scratch', 'punch', 'red "ex" on her photo'),
+    (20.69, 'coin', 'gag', 'quote "kharchili aurat"'),
+    (23.53, 'dundun', 'gag', 'picture shrinks (realise hua)'),
+    (25.38, 'pakk', 'gag', 'quote "namak alag..."'), (26.20, 'pakk', 'gag', 'quote "masala alag..."'),
+    (31.37, 'rewind', 'rewind', 'picture shrinks: flashback to the incident'),
+    (38.67, 'suspense', 'ambience', 'jump cut "you know what she got..."'),
+    (39.95, 'vineboom', 'punch', 'zoom on "annoyed"'),
+    (44.72, 'whatt', 'laugh', 'picture shrinks after "kaise lagne diya?"'),
+    (46.11, 'boing', 'gag', 'quote "bhai... shampoo bottle hi toh hai"'),
+    (52.59, 'bassdrop', 'punch', 'zoom + quote "bhasad"'),
+    (58.04, 'tabla', 'gag', 'reveal: cooking (khaanewali didi)'), (58.90, 'tabla', 'gag', 'swap to dishes (kaamwali didi)'),
+    (63.53, 'clock', 'ambience', 'picture shrinks (zimma sar pe)'),
+    (71.97, 'trombone', 'gag', 'quote "definitely not my thing"'),
+    (82.41, 'crickets', 'ambience', 'quote "just live alone."'),
+    (85.25, 'evillaugh', 'laugh', 'quote "most bizarre flatmate story?"'),
 ]
+
+# measured attack of sounds that swell in (ms): start them early so the peak lands on the visual frame
+LEAD = {'paper': 0.05, 'slide': 0.08, 'whatt': 0.11, 'trombone': 0.10, 'crickets': 0.22, 'tabla': 0.03, 'sweep': 0.03}
 
 def run(cmd):
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode: print(r.stderr[-3000:]); sys.exit(1)
     return r
+
+def load(p):
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-i', p, '-ac', '1', '-ar', '48000', '-f', 's16le', '-'], capture_output=True).stdout
+    return np.frombuffer(r, np.int16).astype(np.float32) / 32768
 
 os.makedirs(P('build'), exist_ok=True)
 # 1) voice: clean + level (two-pass loudnorm to -15 LUFS)
@@ -55,30 +67,42 @@ ln = (f"loudnorm=I=-15:TP=-2:LRA=7:measured_I={js['input_i']}:measured_TP={js['i
 run(['ffmpeg', '-v', 'error', '-y', '-i', P('drive', 'IMG_3133.MP4'), '-vn', '-af', pre + ',' + ln + ',aresample=48000',
      '-ac', '2', '-c:a', 'pcm_s16le', P('build', 'voice.wav')])
 
-# 2) graph: voice + music bed + sfx
-inputs = ['-i', P('build', 'voice.wav'), '-i', P('music', '764.mp3')]  # music input kept for the graph; muted below
-fc = []
-fc.append(f"[0:a]apad=whole_dur={TOTAL}[v]")
-bed = "0.11" if MUSIC else "0"
-fc.append(f"[1:a]aresample=48000,atrim=0:{TOTAL},volume='{bed}':eval=frame,afade=t=in:d=0.4,"
-          f"afade=t=out:st={TOTAL - 0.5}:d=0.5[m]")
-labels = ['[v]', '[m]']
-for k, (t, f, g) in enumerate(EV):
-    inputs += ['-i', P('sfx', f + ('.wav' if f.startswith('lib_') else '.mp3'))]
-    ms = int(t * 1000)
-    fc.append(f"[{k + 2}:a]aresample=48000,aformat=channel_layouts=stereo,volume={g}dB,adelay={ms}|{ms}[s{k}]")
-    labels.append(f'[s{k}]')
-fc.append(''.join(labels) + f"amix=inputs={len(labels)}:normalize=0:duration=first,atrim=0:{TOTAL}[mx]")
-fc.append("[mx]alimiter=limit=0.89:level=false[out]")
-run(['ffmpeg', '-v', 'error', '-y'] + inputs + ['-filter_complex', ';'.join(fc), '-map', '[out]', '-c:a', 'pcm_s16le',
-     P('build', 'premix.wav')])
+# 2) per-hit gain = target - sfx level + local voice level
+lv = json.load(open(P('sfx', 'levels.json')))
+v = load(P('build', 'voice.wav'))
+vr = np.sqrt(np.convolve(v ** 2, np.ones(4800) / 4800, 'same'))
+vdb = 20 * np.log10(vr + 1e-9)
+speech_ref = float(np.percentile(vdb[vdb > -45], 75))          # typical speaking level, floor for quiet moments
+rep = []; plan = []
+for t, k, role, why in sorted(EV):
+    a, b = int(max(0, t - 0.3) * 48000), int((t + 0.8) * 48000)
+    local = max(float(vdb[a:b].max()), speech_ref - 3)
+    g = TARGET[role] - lv[k] + local
+    plan.append((t, k, g))
+    rep.append(f'{t:6.2f}s  {k:9s} {role:10s} gain {g:+6.1f} dB -> {TARGET[role]:+d} dB vs voice   | {why}')
+open(P('build', 'sfx_report.txt'), 'w').write('\n'.join(rep) + '\n')
 
-# 3) final loudness: -14 LUFS integrated, -1 dBTP
+inputs = ['-i', P('build', 'voice.wav')]
+fc = [f"[0:a]apad=whole_dur={TOTAL}[v]"]; labels = ['[v]']
+for i, (t, k, g) in enumerate(plan):
+    inputs += ['-i', P('sfx', f't_{k}.wav')]
+    ms = int(round(max(0, t - LEAD.get(k, 0)) * 1000))
+    fc.append(f"[{i + 1}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume={g:.2f}dB,adelay={ms}|{ms}[s{i}]")
+    labels.append(f'[s{i}]')
+fc.append(''.join(labels) + f"amix=inputs={len(labels)}:normalize=0:duration=first,atrim=0:{TOTAL},afade=t=out:st={TOTAL - 0.25}:d=0.25[mx]")
+fc.append("[mx]alimiter=limit=0.89:level=false[out]")
+run(['ffmpeg', '-v', 'error', '-y'] + inputs + ['-filter_complex', ';'.join(fc), '-map', '[out]', '-c:a', 'pcm_s16le', P('build', 'premix.wav')])
+# SFX-only stem for verification
+fc2 = [x for x in fc if not x.startswith('[0:a]')]
+fc2[-2] = ''.join(labels[1:]) + f"amix=inputs={len(labels) - 1}:normalize=0,apad=whole_dur={TOTAL},atrim=0:{TOTAL}[mx]"
+fc2[-1] = "[mx]anull[out]"
+run(['ffmpeg', '-v', 'error', '-y'] + inputs + ['-filter_complex', ';'.join(fc2), '-map', '[out]', '-c:a', 'pcm_s16le', P('build', 'sfxonly.wav')])
+
+# 3) final loudness: -14 LUFS integrated, -1 dBTP (one linear gain -> relative levels kept)
 r = run(['ffmpeg', '-hide_banner', '-i', P('build', 'premix.wav'), '-af', 'loudnorm=I=-14:TP=-1:LRA=9:print_format=json', '-f', 'null', '-'])
 js = json.loads(r.stderr[r.stderr.rindex('{'):r.stderr.rindex('}') + 1])
 ln = (f"loudnorm=I=-14:TP=-1:LRA=9:measured_I={js['input_i']}:measured_TP={js['input_tp']}:measured_LRA={js['input_lra']}"
       f":measured_thresh={js['input_thresh']}:offset={js['target_offset']}:linear=true")
-run(['ffmpeg', '-v', 'error', '-y', '-i', P('build', 'premix.wav'), '-af', ln + ',aresample=48000', '-c:a', 'pcm_s16le',
-     P('build', 'mix.wav')])
+run(['ffmpeg', '-v', 'error', '-y', '-i', P('build', 'premix.wav'), '-af', ln + ',aresample=48000', '-c:a', 'pcm_s16le', P('build', 'mix.wav')])
 r = run(['ffmpeg', '-hide_banner', '-i', P('build', 'mix.wav'), '-af', 'ebur128=peak=true', '-f', 'null', '-'])
-print('\n'.join(r.stderr.strip().splitlines()[-12:]))
+print('\n'.join(l for l in r.stderr.splitlines()[-12:] if 'I:' in l or 'Peak:' in l))
