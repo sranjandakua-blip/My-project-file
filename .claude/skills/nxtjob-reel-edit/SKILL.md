@@ -32,7 +32,12 @@ recipe; usually only the config changes.
      start/length on a contact sheet, and play it as one continuous overlay over the agent explanation. If
      the spoken span is shorter than the loop, set `"speed"` on the insert (up to ~1.5) so it still finishes;
      if longer, extend the overlay or follow it with a second, different-stage overlay.
-   - Add 5–6 job-related stock B-rolls to break monotony, ~1.5–3 s each, never back-to-back. Mix full-screen
+   - **Client-supplied B-roll** (Drive `Instructions/B rolls/`, `Instructions/Hook clip/`): when the folder has its
+     own clips and images, use THEM (all of them where they fit) instead of stock, each placed on the words it
+     illustrates; the hook clip is the stitch. Stills (agent art, logos, diagrams) go in as
+     `"kind": "image"` cards over the talking head: `file` or `files` (stacked), `width`, `y` (centre),
+     `"card": true` for logos on white; they pop in and fade out. See `examples/nxtjob_overview.json`.
+   - Otherwise add 5–6 job-related stock B-rolls to break monotony, ~1.5–3 s each, never back-to-back. Mix full-screen
      9:16 crops and "16:9 card on black" (captions stay visible above the card).
 4. **Only two sound effects:** a mouse click whenever an overlay/B-roll appears, and a notification ping where
    the creator says "link" at the end (hold the last frame ~0.8 s so the ping finishes).

@@ -1,0 +1,191 @@
+{
+  "_comment": "NxtJob overview reel (all 9 agents), 26-11-2026. Client supplied hook clip + B-roll videos/images in Drive.",
+  "source": "drive/IMG_3160.MP4",
+  "source_duration": 49.37,
+  "transcript": "src_tr.txt",
+  "stitch": {
+    "file": "drive/Instructions/Hook clip/4_5786025425427762297.mp4",
+    "end": 9.2,
+    "label": "*Stitch incoming*",
+    "label_y": 1380
+  },
+  "parts": [
+    {
+      "start": 0,
+      "end": 49.37
+    }
+  ],
+  "inserts": [
+    {
+      "name": "b1",
+      "kind": "full",
+      "file": "drive/Instructions/B rolls/IMG_1051.MP4",
+      "ss": 2.0,
+      "start": 6.4,
+      "end": 9.4,
+      "crop_x": 350,
+      "_words": "AI won't replace you, but rather help you if you use it the right way"
+    },
+    {
+      "name": "b2",
+      "kind": "full",
+      "file": "drive/Instructions/B rolls/IMG_1052.MP4",
+      "ss": 2.0,
+      "start": 10.68,
+      "end": 12.3,
+      "crop_x": 272,
+      "_words": "this recent AI tool that I discovered"
+    },
+    {
+      "name": "b3",
+      "kind": "full",
+      "file": "drive/Instructions/B rolls/IMG_1053.MP4",
+      "ss": 3.0,
+      "start": 12.78,
+      "end": 14.94,
+      "crop_x": 566,
+      "_words": "take over your entire job search"
+    },
+    {
+      "name": "i1",
+      "kind": "image",
+      "file": "drive/Instructions/B rolls/IMG_1379.JPG",
+      "start": 16.36,
+      "end": 18.64,
+      "width": 900,
+      "y": 1060,
+      "_words": "9 AI agents working full-time for you"
+    },
+    {
+      "name": "i2",
+      "kind": "image",
+      "file": "drive/Instructions/B rolls/IMG_1434.JPG",
+      "start": 18.68,
+      "end": 19.9,
+      "width": 560,
+      "y": 1080,
+      "_words": "finding roles (Hunter)"
+    },
+    {
+      "name": "i3",
+      "kind": "image",
+      "files": [
+        "drive/Instructions/B rolls/IMG_1430.PNG",
+        "drive/Instructions/B rolls/IMG_1431.PNG",
+        "drive/Instructions/B rolls/IMG_1432.PNG"
+      ],
+      "card": true,
+      "start": 19.9,
+      "end": 20.9,
+      "width": 640,
+      "y": 1080,
+      "_words": "you'd never see on LinkedIn"
+    },
+    {
+      "name": "i4",
+      "kind": "image",
+      "file": "drive/Instructions/B rolls/IMG_1608.JPG",
+      "start": 20.96,
+      "end": 22.7,
+      "width": 560,
+      "y": 1080,
+      "_words": "reaching out to right people (Networker)"
+    },
+    {
+      "name": "b4",
+      "kind": "full",
+      "file": "drive/Instructions/B rolls/IMG_1250.MP4",
+      "ss": 0.5,
+      "start": 22.84,
+      "end": 24.54,
+      "crop_x": 500,
+      "_words": "tailoring your resume as per the role"
+    },
+    {
+      "name": "b5",
+      "kind": "full",
+      "file": "drive/Instructions/B rolls/IMG_1251.MP4",
+      "ss": 1.0,
+      "start": 24.64,
+      "end": 27.34,
+      "crop_x": 0,
+      "_words": "pitch right on the HR manager's desk"
+    },
+    {
+      "name": "b6",
+      "kind": "full",
+      "file": "drive/Instructions/B rolls/IMG_1252.MP4",
+      "ss": 4.3,
+      "start": 27.34,
+      "end": 30.72,
+      "crop_x": 438,
+      "_words": "prepping you to negotiate"
+    },
+    {
+      "name": "b7",
+      "kind": "full",
+      "file": "drive/Instructions/B rolls/IMG_1257.MP4",
+      "ss": 1.0,
+      "start": 31.04,
+      "end": 33.3,
+      "crop_x": 0,
+      "_words": "never leave the money on the table"
+    },
+    {
+      "name": "i5",
+      "kind": "image",
+      "file": "drive/Instructions/B rolls/IMG_1380.JPG",
+      "start": 34.98,
+      "end": 37.36,
+      "width": 960,
+      "y": 1060,
+      "_words": "without you having to do anything manually (9-step journey)"
+    },
+    {
+      "name": "i6",
+      "kind": "image",
+      "file": "drive/Instructions/B rolls/IMG_1433.JPG",
+      "card": true,
+      "start": 37.76,
+      "end": 39.3,
+      "width": 820,
+      "y": 1080,
+      "_words": "The tool is called NxtJob.ai"
+    }
+  ],
+  "sfx": {
+    "click": "sfx/2585.mp3",
+    "ping": "sfx/2574.mp3",
+    "ping_at": 49.1
+  },
+  "tail": 0.8,
+  "caption_top": 240,
+  "phrase_fix": [
+    [
+      "bitch",
+      "pitch"
+    ],
+    [
+      "full -time",
+      "full-time"
+    ]
+  ],
+  "replace": [
+    [
+      "NextJob",
+      "NxtJob"
+    ],
+    [
+      "Nextjob",
+      "NxtJob"
+    ],
+    [
+      "Rs",
+      "rupees"
+    ],
+    [
+      "NxtJob.AI",
+      "NxtJob.ai"
+    ]
+  ]
+}
