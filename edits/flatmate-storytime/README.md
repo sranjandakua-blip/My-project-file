@@ -21,6 +21,18 @@ Output: `Flatmate_storytime_reel_DD-MM-YYYY.mp4`, 1080x1920, 30 fps, 91.8 s, -14
 Safe zones: title centred at y=512, picture at y 656-1264, captions centred at y=1418 in the band below (~1290-1550), inside x 110-970; nothing
 important in the bottom 320 px or the right 120 px rail.
 
+## v3 — old-reference storytelling vibe (current)
+Client liked the B-roll but wanted the feel of her previous videos. Kept every B-roll reveal/graphic; changed:
+- pale-yellow "storytime - ..." title for the first ~3 s only (Inter SemiBold), no magenta title
+- word-by-word magenta captions replaced by plain white Inter captions under the picture, plus ~15 dialogue /
+  punchline lines in Instrument Serif on the picture (`QUOTES` in `code/edit.py`); captions hide while a quote shows
+- "me / her" polaroids at "meri best friend… well, ex best friend" with a red marker "ex"
+- picture shrinks on story beats (`BREATHE`) instead of constant face zooms; zooms only on annoyed / bhasad / Kotak 811
+- warm, cosy tungsten grade (`WARM` LUT)
+- no music bed, voice-led; record scratch, boing, trombone hits; ends on "okay, bye" (no follow card)
+- needs `fonts/InstrumentSerif-Regular.ttf`, `stills/me_raw.png` (raw @16.9 s), `stills/her_raw.png` (Mixkit 28201 @6 s),
+  sfx 702 / 2894 / 744
+
 ## Rebuild
 Work dir `W` needs: `drive/IMG_3133.MP4`, `fonts/` (Poppins ExtraBold/SemiBold, PlayfairDisplay[wght], Anton,
 PermanentMarker from github.com/google/fonts), `broll/<id>.mp4` (Mixkit `https://assets.mixkit.co/videos/<id>/<id>-720.mp4`,

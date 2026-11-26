@@ -1,8 +1,9 @@
 """Audio mix: voice (cleaned, levelled) + lo-fi bed + SFX -> build/mix.wav (-14 LUFS, -1 dBTP)."""
 import sys, os, subprocess, json
 WD = sys.argv[1]; P = lambda *a: os.path.join(WD, *a)
-TOTAL = 91.82
-MAIN_END = 89.62
+TOTAL = 89.95
+MAIN_END = 89.95
+MUSIC = False   # old-reference vibe: voice-led, no music bed
 
 reveals = [4.48, 7.45, 10.87, 19.21, 25.07, 29.45, 35.53, 41.58, 47.60, 58.04, 66.57, 75.59, 81.62]
 EV = []  # (time, file, gain_db)
@@ -14,9 +15,10 @@ EV += [
     (29.92, '2364', -13), (30.38, '2364', -13), (30.87, '1530', -12),                       # MINE / HERS / tape
     (66.68, '2354', -6),                                                                    # OTP banner
     (74.80, '2870', -13),                                                                   # Kotak 811
-    (18.01, '2356', -10), (39.95, '166', -12), (52.62, '3115', -12), (71.93, '166', -14),   # punch-ins
-    (MAIN_END - 0.05, '1490', -8),                                                          # follow card
-    (MAIN_END + 1.45, '1133', -10),                                                         # cover
+    (17.15, '2357', -10), (17.40, '2357', -10),                                             # me / her photos
+    (18.01, '702', -9),                                                                     # "ex" record scratch
+    (39.95, '166', -12), (46.14, '2894', -13), (52.62, '3115', -11),                        # annoyed / bhai.. / bhasad
+    (72.00, '744', -15),                                                                    # "definitely not my thing"
 ]
 
 def run(cmd):
@@ -35,12 +37,12 @@ run(['ffmpeg', '-v', 'error', '-y', '-i', P('drive', 'IMG_3133.MP4'), '-vn', '-a
      '-ac', '2', '-c:a', 'pcm_s16le', P('build', 'voice.wav')])
 
 # 2) graph: voice + music bed + sfx
-inputs = ['-i', P('build', 'voice.wav'), '-i', P('music', '764.mp3')]
+inputs = ['-i', P('build', 'voice.wav'), '-i', P('music', '764.mp3')]  # music input kept for the graph; muted below
 fc = []
 fc.append(f"[0:a]apad=whole_dur={TOTAL}[v]")
-bed = f"0.11+(0.32-0.11)*clip((t-{MAIN_END - 0.3})/0.4,0,1)"
+bed = "0.11" if MUSIC else "0"
 fc.append(f"[1:a]aresample=48000,atrim=0:{TOTAL},volume='{bed}':eval=frame,afade=t=in:d=0.4,"
-          f"afade=t=out:st={TOTAL - 0.7}:d=0.7[m]")
+          f"afade=t=out:st={TOTAL - 0.5}:d=0.5[m]")
 labels = ['[v]', '[m]']
 for k, (t, f, g) in enumerate(EV):
     inputs += ['-i', P('sfx', f + '.mp3')]

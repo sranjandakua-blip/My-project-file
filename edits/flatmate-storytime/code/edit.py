@@ -11,10 +11,9 @@ WD = sys.argv[1]
 P = lambda *a: os.path.join(WD, *a)
 W, H, FPS = 1080, 1920, 30
 SRC_W, SRC_H = 2160, 1214   # x264 4:2:0 rounded the 1215px letterbox crop down to even
-MAIN_END = 89.62            # talking head ends (after "bye")
-FOLLOW_END = MAIN_END + 1.45
-COVER_END = FOLLOW_END + 0.75
-TOTAL = COVER_END
+MAIN_END = 89.95            # ends on her "okay, bye" like her previous videos (no end card)
+FOLLOW_END = MAIN_END
+TOTAL = MAIN_END
 MAGENTA = (250, 46, 236)    # sampled from the reference
 INK = (22, 22, 24)
 # Original layout kept: the 16:9 picture sits centred in the 9:16 frame (as in the raw file).
@@ -42,11 +41,10 @@ def serif(size, weight=700):
 
 # ---------------------------------------------------------------- shots (talking head framing)
 CUTS = [  # (start, zoom)  -- raw jump cuts + punch-ins on the beats
-    (0.00, 1.00), (2.98, 1.12), (6.27, 1.00), (12.47, 1.14), (14.09, 1.00), (16.57, 1.00), (18.01, 1.24),
-    (18.75, 1.00), (23.53, 1.12), (28.33, 1.00), (31.37, 1.16), (33.63, 1.00), (38.67, 1.12), (39.95, 1.30),
-    (40.60, 1.00), (44.72, 1.14), (46.00, 1.00), (51.70, 1.00), (52.62, 1.24), (53.22, 1.06), (56.40, 1.00),
-    (60.17, 1.12), (63.53, 1.00), (66.57, 1.12), (69.87, 1.00), (71.93, 1.20), (73.17, 1.00), (74.47, 1.22),
-    (75.59, 1.00), (77.77, 1.14), (79.10, 1.00), (81.18, 1.10), (83.62, 1.00), (86.28, 1.13), (89.03, 1.00),
+    (0.00, 1.00), (6.27, 1.00), (12.47, 1.00), (16.57, 1.00), (23.53, 1.00), (28.33, 1.00), (31.37, 1.00),
+    (33.63, 1.00), (38.67, 1.00), (39.95, 1.30), (40.60, 1.00), (46.00, 1.00), (51.70, 1.00), (52.62, 1.30),
+    (53.22, 1.00), (56.40, 1.00), (60.17, 1.00), (63.53, 1.00), (69.87, 1.00), (74.47, 1.25), (75.59, 1.00),
+    (79.10, 1.00), (83.62, 1.00), (89.03, 1.00),
 ]
 faces = json.load(open(P('faces.json')))
 PUNCH = 0.6
@@ -65,17 +63,34 @@ def shot_at(t):
         if sh['s'] <= t < sh['e']: return sh
     return SHOTS[-1]
 
+_v = np.arange(256, dtype=np.float32)
+def _curve(gain, lift, top):
+    x = _v / 255
+    y = lift + (top - lift) * (x ** 1.06) * gain
+    return np.clip(y * 255, 0, 255).astype(np.uint8)
+WARM = (_curve(0.90, 0.02, 0.90), _curve(0.97, 0.02, 0.93), _curve(1.0, 0.025, 0.97))   # B, G, R (subtle tungsten, highlights held)
+
+def warm(img):
+    b, g, r = cv2.split(img)
+    return cv2.merge([cv2.LUT(b, WARM[0]), cv2.LUT(g, WARM[1]), cv2.LUT(r, WARM[2])])
+
+BREATHE = [(23.53, 25.07), (31.37, 33.63), (44.72, 46.00), (63.53, 66.57), (79.10, 81.18)]  # picture shrinks on story beats
+def breathe_scale(t):
+    for a, b in BREATHE:
+        if a <= t < b: return 1 - 0.16 * ease_out_cubic((t - a) / 0.55)
+    return 1.0
+
 def head_frame(t, src):
     sh = shot_at(t)
     prog = (t - sh['s']) / max(0.001, sh['e'] - sh['s'])
-    z = sh['z'] * (1 + 0.025 * prog)              # slow push inside every shot
+    z = sh['z'] * (1 + 0.012 * prog)              # barely-there drift
     cw, ch = SRC_W / z, SRC_H / z                 # same 16:9 shape, just tighter
     x0 = min(max(sh['cx'] - cw / 2, 0), SRC_W - cw)
     y0 = min(max(sh['cy'] - 0.42 * ch, 0), SRC_H - ch)
     k = WW / cw
     M = np.float32([[k, 0, -x0 * k], [0, k, -y0 * k]])
-    return cv2.warpAffine(src, M, (WW, WH), flags=cv2.INTER_AREA if k < 0.75 else cv2.INTER_CUBIC,
-                          borderMode=cv2.BORDER_REPLICATE)
+    return warm(cv2.warpAffine(src, M, (WW, WH), flags=cv2.INTER_AREA if k < 0.75 else cv2.INTER_CUBIC,
+                               borderMode=cv2.BORDER_REPLICATE))
 
 # ---------------------------------------------------------------- paper background
 def make_paper():
@@ -465,6 +480,103 @@ def draw_title(frame, t):
     if t < 0.1: sc, al = 1.0, 1.0
     paste_scaled(frame, title_sprite(), W / 2, TITLE_CY, sc, al)
 
+# ---------------------------------------------------------------- old-reference text system
+FONT_QUOTE = P('fonts', 'InstrumentSerif-Regular.ttf')
+FONT_CAP = '/usr/share/fonts/opentype/inter/Inter-SemiBold.otf'
+TITLE_YELLOW = (250, 236, 170)
+TITLE = ['storytime - best friend ke saath', 'flat liya aur dosti khatam']
+
+def text_sprite(lines, font, color, shadow=0.75, blur=6, spacing=0.9):
+    asc, desc = font.getmetrics(); lh = int((asc + desc) * spacing)
+    widths = [font.getbbox(l)[2] - font.getbbox(l)[0] for l in lines]
+    pad = 30; w = max(widths) + pad * 2; h = lh * len(lines) + pad * 2
+    txt = Image.new('L', (w, h), 0); d = ImageDraw.Draw(txt)
+    for i, (l, lw) in enumerate(zip(lines, widths)):
+        d.text((w / 2 - lw / 2 - font.getbbox(l)[0], pad + i * lh), l, font=font, fill=255)
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    if shadow:
+        sh = Image.new('RGBA', (w, h), (0, 0, 0, 0)); sh.putalpha(txt.filter(ImageFilter.GaussianBlur(blur)).point(lambda v: int(min(255, v * 2.2) * shadow)))
+        im = Image.alpha_composite(im, sh)
+        sh2 = Image.new('RGBA', (w, h), (0, 0, 0, 0)); sh2.putalpha(txt.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(2)).point(lambda v: int(v * 0.6 * shadow)))
+        im = Image.alpha_composite(im, sh2)
+    f = Image.new('RGBA', (w, h), color + (255,)); f.putalpha(txt)
+    return to_bgra(Image.alpha_composite(im, f))
+
+# dialogue / punchline lines on the picture: (start, end, text, x, y in window, size)
+QUOTES = [
+    (5.46, 6.27, 'shift mat ho jaana', 540, 300, 96),
+    (11.33, 12.47, 'naya dost\ndhoondhna padega', 540, 300, 92),
+    (15.10, 16.57, 'a whole\ndifferent side', 840, 250, 84),
+    (20.72, 21.49, 'kharchili aurat', 540, 470, 100),
+    (25.41, 27.35, 'namak alag...\nmasala alag...', 540, 300, 92),
+    (37.11, 38.67, 'can I use yours?', 830, 230, 76),
+    (41.04, 42.80, '"I don\'t like my shampoo\nbottle getting wet"', 540, 470, 66),
+    (42.80, 44.70, 'tune uspe paani\nkaise lagne diya??', 865, 250, 76),
+    (46.14, 47.58, 'bhai...\nshampoo bottle\nhi toh hai', 245, 300, 74),
+    (48.44, 49.76, 'koi passport\nthodi hai', 540, 300, 96),
+    (52.62, 53.40, 'bhasad', 830, 300, 120),
+    (72.00, 73.17, 'definitely\nnot my thing', 830, 270, 80),
+    (77.77, 79.10, 'unlike my\nflat life', 830, 270, 84),
+    (82.44, 83.62, 'just live alone.', 540, 470, 100),
+    (85.28, 87.10, 'most bizarre\nflatmate story?', 830, 270, 78),
+]
+_qs = {}
+def draw_quotes(win, t):
+    shown = False
+    for (a, b, txt, x, y, size) in QUOTES:
+        if not (a - 0.03 <= t < b): continue
+        k = (txt, size)
+        if k not in _qs: _qs[k] = text_sprite(txt.split('\n'), ImageFont.truetype(FONT_QUOTE, size), (255, 255, 255), 1.0, 10, 0.82)
+        p = (t - a + 0.03) / 0.18
+        paste_scaled(win, _qs[k], x, y, 0.94 + 0.06 * ease_out_cubic(p), min(1, p * 1.6))
+        shown = True
+    return shown
+
+def draw_title(frame, t):
+    if t > 3.6: return
+    if 'title' not in _spr: _spr['title'] = text_sprite(TITLE, ImageFont.truetype(FONT_CAP, 46), TITLE_YELLOW, 0, 0, 1.1)
+    al = 1.0 if t < 3.2 else max(0, 1 - (t - 3.2) / 0.4)
+    paste_scaled(frame, _spr['title'], W / 2, 512, 1.0, al)
+
+CAP_FONT = ImageFont.truetype(FONT_CAP, 46)
+def draw_plain_captions(frame, t):
+    for pg in PAGES:
+        if not (pg[0]['page_s'] <= t < pg[0]['page_e']): continue
+        text = ' '.join(w['text'] for w in pg)
+        k = ('cap', text)
+        if k not in _spr:
+            words, lines, cur = text.split(), [], ''
+            for wd in words:
+                trial = (cur + ' ' + wd).strip()
+                if CAP_FONT.getbbox(trial)[2] > 860 and cur: lines.append(cur); cur = wd
+                else: cur = trial
+            lines.append(cur)
+            _spr[k] = text_sprite(lines, CAP_FONT, (255, 255, 255), 0, 0, 1.15)
+        paste_scaled(frame, _spr[k], W / 2, 1345, 1.0, 1.0)
+
+def polaroid(path, crop, label, w=300, h=340):
+    im = Image.open(path).convert('RGB').crop(crop).resize((w, h), Image.LANCZOS)
+    im = Image.fromarray(warm(cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR))[..., ::-1])
+    card = Image.new('RGBA', (w + 36, h + 96), (250, 248, 242, 255)); card.paste(im, (18, 18))
+    f = ImageFont.truetype(FONT_QUOTE, 54); d = ImageDraw.Draw(card)
+    lw = f.getbbox(label)[2]; d.text(((w + 36 - lw) / 2, h + 22), label, font=f, fill=(30, 30, 30))
+    out = Image.new('RGBA', (card.width + 40, card.height + 40), (0, 0, 0, 0))
+    sh = Image.new('RGBA', out.size, (0, 0, 0, 0)); ImageDraw.Draw(sh).rectangle([24, 28, 24 + card.width, 28 + card.height], fill=(0, 0, 0, 110))
+    out = Image.alpha_composite(out, sh.filter(ImageFilter.GaussianBlur(10))); out.alpha_composite(card, (20, 20))
+    return to_bgra(out)
+
+def draw_photos(win, t):
+    if not (17.12 <= t < 18.75): return
+    if 'me' not in GFX:
+        GFX['me'] = polaroid(P('stills', 'me_raw.png'), (930, 40, 1650, 856), 'me')
+        GFX['her'] = polaroid(P('stills', 'her_raw.png'), (110, 0, 600, 555), 'her')
+        f = ImageFont.truetype(FONT_MARK, 110)
+        im = Image.new('RGBA', (260, 170), (0, 0, 0, 0)); ImageDraw.Draw(im).text((20, 0), 'ex', font=f, fill=(215, 25, 35))
+        GFX['ex'] = to_bgra(im)
+    sc, al = pop(t, 17.15, 0.25, 1.6); paste_scaled(win, GFX['me'], 200, 300, sc * 0.82, al, angle=-6)
+    sc, al = pop(t, 17.40, 0.25, 1.6); paste_scaled(win, GFX['her'], 880, 300, sc * 0.82, al, angle=5)
+    sc, al = pop(t, 18.01, 0.18, 2.0); paste_scaled(win, GFX['ex'], 905, 150, sc, al, angle=-12)
+
 # ---------------------------------------------------------------- end cards
 def follow_card(tau):
     im = np.zeros((H, W, 3), np.uint8)
@@ -491,13 +603,14 @@ def cover_frame(src_frame_at):
     base = head_frame(40.2, src_frame_at(40.2))
     g = cv2.cvtColor(base, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255
     g = np.clip((g - 0.08) * 1.15, 0, 1) ** 1.1
-    lo, hi = np.array([8, 4, 38], np.float32), np.array([70, 90, 255], np.float32)  # BGR: deep maroon -> hot red
-    win = (lo + (hi - lo) * g[..., None])
-    yy, xx = np.mgrid[0:WH, 0:WW]
-    vig = 1 - 0.5 * np.clip(((xx - WW / 2) / (WW * 0.7)) ** 2 + ((yy - WH / 2) / (WH * 0.8)) ** 2, 0, 1)
-    im = np.zeros((H, W, 3), np.uint8)
-    im[WIN_Y:WIN_Y + WH] = np.clip(win * vig[..., None], 0, 255).astype(np.uint8)
-    pil = Image.fromarray(cv2.cvtColor(im, cv2.COLOR_BGR2RGB)).convert('RGBA'); d = ImageDraw.Draw(pil)
+    im = np.zeros((H, W, 3), np.uint8); im[WIN_Y:WIN_Y + WH] = base
+    q = text_sprite(['tune uspe paani', 'kaise lagne diya??'], ImageFont.truetype(FONT_QUOTE, 84), (255, 255, 255), 1.0, 10, 0.82)
+    paste_scaled(im, q, 830, WIN_Y + 250, 1.0)
+    t1 = text_sprite(['storytime - best friend ke saath', 'flat liya aur dosti khatam'], ImageFont.truetype(FONT_CAP, 54), TITLE_YELLOW, 0, 0, 1.1)
+    paste_scaled(im, t1, W / 2, 470, 1.0)
+    COVER = im
+    return COVER
+    pil = None; d = None
     fs = ImageFont.truetype(FONT_SANS, 50); fa = ImageFont.truetype(FONT_ANTON, 96)
     t1 = 'THE SHAMPOO BOTTLE STORY'
     l, t, r, b = fs.getbbox(t1); d.text((W / 2 - (r - l) / 2 - l, 280 - t), t1, font=fs, fill=(255, 255, 255))
@@ -519,13 +632,10 @@ def insert_at(t):
     return None
 
 def render(t, src_frame_at):
-    if t >= FOLLOW_END:
-        return cover_frame(src_frame_at)
-    if t >= MAIN_END:
-        return follow_card(t - MAIN_END)
     ins = insert_at(t)
     if ins is None:
         win = head_frame(min(t, 89.5), src_frame_at(min(t, 89.5)))
+        draw_photos(win, t)
     elif ins.get('kind') == 'bills':
         win = np.empty((WH, WW, 3), np.uint8); draw_bills(win, ins, t)
     else:
@@ -535,10 +645,18 @@ def render(t, src_frame_at):
         paper = PAPER.astype(np.float32) * (1 - 0.13 * sh * (1 - m))[..., None]
         win = (paper * (1 - m[..., None]) + clip * m[..., None]).astype(np.uint8)
         draw_extra(win, ins, t)
+    quoted = draw_quotes(win, t)
     fr = np.zeros((H, W, 3), np.uint8)
-    fr[WIN_Y:WIN_Y + WH] = win
+    s_ = breathe_scale(t) if ins is None else 1.0
+    if s_ < 0.999:
+        sw, sh_ = int(WW * s_), int(WH * s_)
+        small = cv2.resize(win, (sw, sh_), interpolation=cv2.INTER_AREA)
+        x0, y0 = (W - sw) // 2, WIN_Y + (WH - sh_) // 2
+        fr[y0:y0 + sh_, x0:x0 + sw] = small
+    else:
+        fr[WIN_Y:WIN_Y + WH] = win
     draw_title(fr, t)
-    draw_captions(fr, t, dark=False)
+    if not quoted: draw_plain_captions(fr, t)
     return fr
 
 # ---------------------------------------------------------------- sources
@@ -567,6 +685,8 @@ if __name__ == '__main__':
         os.makedirs(P('prev'), exist_ok=True)
         src = SeekSource(P('sdr_inner.mp4'))
         for ts in sys.argv[3:]:
+            if ts == 'cover':
+                cv2.imwrite(P('prev', 'cover.png'), cover_frame(src.at)); continue
             t = float(ts)
             cv2.imwrite(P('prev', f'f_{t:06.2f}.png'), render(t, src.at))
     elif mode == 'render':
