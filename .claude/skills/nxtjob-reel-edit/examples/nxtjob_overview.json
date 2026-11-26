@@ -144,13 +144,13 @@
     {
       "name": "i6",
       "kind": "image",
-      "file": "drive/Instructions/B rolls/IMG_1433.JPG",
+      "file": "assets/nxtjob_logo.png",
       "card": true,
       "start": 37.76,
       "end": 39.3,
-      "width": 820,
+      "width": 680,
       "y": 1080,
-      "_words": "The tool is called NxtJob.ai"
+      "_words": "The tool is called NxtJob.ai (official logo from nxtjob.ai header)"
     }
   ],
   "sfx": {

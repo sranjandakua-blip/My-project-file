@@ -37,6 +37,10 @@ recipe; usually only the config changes.
      illustrates; the hook clip is the stitch. Stills (agent art, logos, diagrams) go in as
      `"kind": "image"` cards over the talking head: `file` or `files` (stacked), `width`, `y` (centre),
      `"card": true` for logos on white; they pop in and fade out. See `examples/nxtjob_overview.json`.
+   - **NxtJob logo: always the official one** (client rule) — `assets/nxtjob_logo.png` (transparent PNG, 605×152,
+     from the nxtjob.ai site header), even if the Drive folder has a different logo image. Use it as an image
+     card with `"card": true, "width": 680` (logo stays at native size, sharp). If the site logo changes, re-fetch
+     the header `<img>` (top-left) from https://nxtjob.ai.
    - Otherwise add 5–6 job-related stock B-rolls to break monotony, ~1.5–3 s each, never back-to-back. Mix full-screen
      9:16 crops and "16:9 card on black" (captions stay visible above the card).
 4. **Only two sound effects:** a mouse click whenever an overlay/B-roll appears, and a notification ping where
