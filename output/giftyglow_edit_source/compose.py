@@ -7,8 +7,11 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
 W, H, FPS = 1080, 1920, 30
 D = sys.argv[1] if len(sys.argv) > 1 else '.'
 CAP = D + '/cap/'
-DUR = 25.233
-N = int(DUR * FPS)
+DUR = 25.233          # timeline (design) duration before the 'something' fix
+CUTP, SHIFT = 15.11, 0.36   # removed duplicate 'something' at 15.11 of the output
+DUR_OUT = 24.87
+N = int(DUR_OUT * FPS)
+def warp(tr): return tr if tr < CUTP else tr + SHIFT
 PREVIEW = [float(x) for x in sys.argv[2].split(',')] if len(sys.argv) > 2 else None
 
 GOLD = (255, 190, 70)
@@ -252,7 +255,8 @@ SH = [
 CUST_T = [(12.90, 0), (13.18, 1)] + [(13.42 + i * 0.105, 2 + i) for i in range(10)] + [(14.52, 12)]
 SFX = []  # (time, kind)
 
-def frame(t):
+def frame(t_real):
+    t = warp(t_real)
     for (s, e, k, p) in SH:
         if s <= t < e: break
     lt, L = t - s, e - s
@@ -280,7 +284,7 @@ def frame(t):
             if t >= ct: idx = ci
         img = view(cust[idx], 540, 960, 1.0 + 0.06 * u)
     elif k == 'photo1':
-        z = 1.0 + 0.12 * u
+        z = 1.0 + 0.12 * (t_real - 14.80) / (16.55 - SHIFT - 14.80)
         im = P1
         # fit width 1400 => scale to cover 1080x1920
         sc = H / im.height if im.width * H / im.height >= W else W / im.width
@@ -307,8 +311,8 @@ def frame(t):
         scaled_center(base, LOGO_CARD, W / 2, 210, spring((lt - 0.15) / 0.5))
     refcaps.draw(base, t, k, s, e)
     # fade out last 0.35s
-    if t > DUR - 0.35:
-        f = (DUR - t) / 0.35
+    if t_real > DUR_OUT - 0.35:
+        f = (DUR_OUT - t_real) / 0.35
         base = Image.blend(Image.new('RGBA', (W, H), (0, 0, 0, 255)), base, max(f, 0))
     return base.convert('RGB')
 

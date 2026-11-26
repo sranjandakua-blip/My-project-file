@@ -1,9 +1,10 @@
 import numpy as np, wave, sys
-SR=48000; DUR=25.25; N=int(SR*DUR); rng=np.random.default_rng(7)
+SR=48000; DUR=24.89; N=int(SR*DUR); rng=np.random.default_rng(7)
 t=np.arange(N)/SR
 def env(n,a=0.005,d=1.0):
     x=np.arange(n)/SR; return np.minimum(x/a,1)*np.exp(-x/d)
-def add(buf,sig,at):
+def add(buf,sig,at,warp=False):
+    if warp and at>=15.11: at-=0.36
     i=int(at*SR)
     if i>=N: return
     j=min(N,i+len(sig)); buf[i:j]+=sig[:j-i]
@@ -45,6 +46,7 @@ while tt<DUR-0.8:
 mus*=np.minimum(t/0.6,1)*np.minimum((DUR-t)/0.6,1)
 # ---- sfx ----
 sfx=np.zeros(N)
+def adds(sig,at): add(sfx,sig,at,True)
 def whoosh(d=0.35,v=0.35):
     n=int(SR*d); x=np.arange(n)/SR; s=rng.standard_normal(n)
     # sweeping one-pole lowpass
@@ -65,12 +67,12 @@ def shimmer(v=0.12):
         s=np.sin(2*np.pi*hz(m)*x)*env(n,0.003,0.35)
         out[int(i*0.06*SR):int(i*0.06*SR)+n]+=s
     return v*out
-for w in [3.00,11.20,12.90,16.55,17.55,18.25,18.85,22.62]: add(sfx,whoosh(),w-0.18)
-add(sfx,whoosh(0.5,0.3),14.80-0.25); add(sfx,shimmer(),14.82)
-for p_ in [10.45,20.90,21.72]: add(sfx,pop(),p_)
-add(sfx,pop(0.25,1200),22.77); add(sfx,pop(0.25,1100),22.97); add(sfx,shimmer(0.1),22.65)
-add(sfx,click(0.4),13.18)
-for i in range(10): add(sfx,click(0.22),13.42+i*0.105)
+for w in [3.00,11.20,12.90,16.55,17.55,18.25,18.85,22.62]: adds(whoosh(),w-0.18)
+adds(whoosh(0.5,0.3),14.80-0.25); adds(shimmer(),14.82)
+for p_ in [10.45,20.90,21.72]: adds(pop(),p_)
+adds(pop(0.25,1200),22.77); adds(pop(0.25,1100),22.97); adds(shimmer(0.1),22.65)
+adds(click(0.4),13.18)
+for i in range(10): adds(click(0.22),13.42+i*0.105)
 def wr(fn,x):
     x=np.clip(x,-1,1); w=wave.open(fn,'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x*32767).astype(np.int16).tobytes()); w.close()
 wr('music.wav',mus/np.abs(mus).max()*0.8); wr('sfx.wav',sfx)

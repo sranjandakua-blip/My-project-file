@@ -250,8 +250,8 @@ def draw(base, t, k, shot_start, shot_end):
         script_line(base, 'what you can', t, 9.42, 540, 1405, size=96)
         block_band(base, 'CREATE', t, 9.92, 1560, size=175)
     elif within(15.2, 16.55):        # truly PERSONAL
-        serif_in(base, 'truly', t, 15.30, 300, 1330, size=96)
-        glow_word(base, 'PERSONAL', t, 15.70, 540, 1470, size=180)
+        serif_in(base, 'truly', t, 15.84, 300, 1330, size=96)
+        glow_word(base, 'PERSONAL', t, 16.10, 540, 1470, size=180)
     elif k in ('scroll', 'zoomin') and within(16.55, 20.1):   # occasions: small yellow tags
         tag = {16.55: 'birthdays', 17.55: 'anniversaries', 18.25: 'couples', 18.85: 'every special occasion'}[shot_start]
         highlight(base, tag, t, shot_start + 0.05, 540, 1640, size=64, t_end=shot_end)
