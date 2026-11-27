@@ -4,9 +4,9 @@ Frames are decoded exactly like reel.py's base stream (keeps concatenated, 30 fp
 import json, os, sys, subprocess, time, numpy as np, cv2, onnxruntime as ort
 cfg_path = os.path.abspath(sys.argv[1]); cfg = json.load(open(cfg_path)); os.chdir(os.path.dirname(cfg_path))
 W, H, FPS, MW, MH = 1080, 1920, 30, 512, 896
-keeps = cfg['keeps']; body = sum(e - s for s, e in keeps); n = int(round(body * FPS))
+keeps = cfg['keeps']; SPEED = cfg.get('speed', 1.0); body = sum(e - s for s, e in keeps) / SPEED; n = int(round(body * FPS))
 FILL = f'scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}'
-fc = ''.join(f'[0:v]trim={s}:{e},setpts=PTS-STARTPTS,fps={FPS},{FILL},scale={MW}:{MH}:flags=area,setsar=1[v{i}];' for i, (s, e) in enumerate(keeps))
+fc = ''.join(f'[0:v]trim={s}:{e},setpts=(PTS-STARTPTS)/{SPEED},fps={FPS},{FILL},scale={MW}:{MH}:flags=area,setsar=1[v{i}];' for i, (s, e) in enumerate(keeps))
 fc += ''.join(f'[v{i}]' for i in range(len(keeps))) + f'concat=n={len(keeps)}:v=1:a=0[out]'
 p = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', cfg['source'], '-filter_complex', fc, '-map', '[out]', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
                      stdout=subprocess.PIPE)

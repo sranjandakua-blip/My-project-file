@@ -13,8 +13,8 @@ PNG = cfg['png_dir']; FONTS = cfg['fonts_dir']; SFXD = cfg['sfx_dir']
 YEL = tuple(cfg.get('yellow', [255, 226, 52])); WHITE = (255, 255, 255)
 
 # ---------------- time mapping ----------------
-KEEPS = cfg['keeps']; CUM = []; _c = 0.0
-for s, e in KEEPS: CUM.append(_c); _c += e - s
+KEEPS = cfg['keeps']; CUM = []; _c = 0.0; SPEED = cfg.get('speed', 1.0)   # speed > 1: whole talk plays faster (pitch kept)
+for s, e in KEEPS: CUM.append(_c); _c += (e - s) / SPEED
 BODY = _c; END = cfg.get('end', {}).get('dur', 0.0); TOTAL = BODY + END
 NF = int(round(TOTAL * FPS))
 
@@ -23,13 +23,13 @@ def o(t):
     """source time -> output time (times inside a removed span snap to the next kept frame)"""
     for (s, e), c0 in zip(KEEPS, CUM):
         if t < s: return c0
-        if t <= e: return c0 + (t - s)
+        if t <= e: return c0 + (t - s) / SPEED
     return BODY
 
 
 def src_at(T):
     for (s, e), c0 in zip(KEEPS, CUM):
-        if T < c0 + (e - s): return s + (T - c0)
+        if T < c0 + (e - s) / SPEED: return s + (T - c0) * SPEED
     return KEEPS[-1][1]
 
 
@@ -106,7 +106,7 @@ def grab(file, t, vf):
 SRC = cfg['source']
 FILL = f'scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}'
 def base_args():
-    fc = ''.join(f'[0:v]trim={s}:{e},setpts=PTS-STARTPTS,fps={FPS},{FILL},setsar=1[v{i}];' for i, (s, e) in enumerate(KEEPS))
+    fc = ''.join(f'[0:v]trim={s}:{e},setpts=(PTS-STARTPTS)/{SPEED},fps={FPS},{FILL},setsar=1[v{i}];' for i, (s, e) in enumerate(KEEPS))
     fc += ''.join(f'[v{i}]' for i in range(len(KEEPS))) + f'concat=n={len(KEEPS)}:v=1:a=0[out]'
     return ['ffmpeg', '-v', 'error', '-i', SRC, '-filter_complex', fc, '-map', '[out]', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']
 BASE = Stream(base_args, lambda i: grab(SRC, src_at(i / FPS), FILL))
@@ -491,7 +491,7 @@ def build_audio(path):
                     str(mus.get('bpm', 104))], check=True)
     inputs = ['-i', SRC, '-i', mpath]; fc = []
     for i, (s, e) in enumerate(KEEPS):
-        fc.append(f'[0:a]atrim={s}:{e},asetpts=PTS-STARTPTS,afade=t=in:d=0.012,afade=t=out:st={e - s - .012:.3f}:d=0.012[a{i}]')
+        fc.append(f'[0:a]atrim={s}:{e},asetpts=PTS-STARTPTS,atempo={SPEED},afade=t=in:d=0.012,afade=t=out:st={(e - s) / SPEED - .012:.3f}:d=0.012[a{i}]')
     fc.append(''.join(f'[a{i}]' for i in range(len(KEEPS))) + f'concat=n={len(KEEPS)}:v=0:a=1,loudnorm=I=-14:TP=-1.5:LRA=11,'
               f'aresample=48000,aformat=channel_layouts=stereo,apad=whole_dur={TOTAL:.3f}[voice]')
     fc.append('[voice]asplit=2[vo][vsc]')
@@ -516,7 +516,8 @@ if __name__ == '__main__':
     # client rules (Nov 2026): reels stay under a minute; phone-number card 2-3 s before the final CTA frame
     if TOTAL >= 59.5 and '--allow-long' not in sys.argv:
         sys.exit(f'TOTAL {TOTAL:.1f}s >= 59.5s: tighten keeps/end card (client rule: videos under a minute)')
-    if ENDD and not ENDD.get('no_phone') and not any('phone_card' in f for f, _ in ENDD['states']):
+    has_phone = (ENDD and any('phone_card' in f for f, _ in ENDD['states'])) or any('phone_card' in i.get('file', '') for i in cfg.get('inserts', []))
+    if ENDD and not ENDD.get('no_phone') and not has_phone:
         print('WARN: end card has no phone_card state (client rule: phone CTA 2-3 s before the final CTA frame)')
     if '--check' in sys.argv:
         for c in CARDS:
