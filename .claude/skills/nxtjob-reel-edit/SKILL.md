@@ -85,9 +85,23 @@ Work in a scratch dir `W`. Scripts are in `scripts/` next to this file (`S`).
    day you render. For a revision of the same video on the same day add `_v2`, `_v3`
    (`Tailor_reel_25-11-2026_v2.mp4`).
 
+## Other formats & options (config)
+- **No stitch** (reference opens straight on the creator, e.g. the Zeel Shah "Keep scrolling if…" format):
+  `"stitch": null`.
+- **Keyframed zoom** (client: "aage 1-3 seconds me zoom in daldena key frame lagake"): `"zoom": [[t, z], ...]` on
+  the source timeline — eased between keys, two keys at the same time = hard punch cut; `"zoom_center": [x, y]`
+  (the face, output px). Default recipe: `[0,1.0]→[3.0,1.2]`, hold to the end of the hook sentence, cut back to 1.0;
+  add 1.1–1.12 punch-ins on 2–3 later sentences.
+- **Text inserts** `"kind": "text"`: `"style": "banner"` = yellow box with black serif (EB Garamond, bundled) for the
+  hook line at the top (`"pop": false, "click": false`, 0–3 s); `"style": "card"` = small white callout at the top
+  (`y` ≈ 290, `size` 80, optional `color`), e.g. "CTC + 10%", "+40% more ↑". Put `caption_top` (~420) below them.
+- `"click": false` on any insert skips its click SFX. See `examples/negotiator_zoom_banner.json`.
+
 ## Gotchas
 - `rm` with globs on relative dirs is blocked by the sandbox safety check — use fresh directories instead.
 - Screenshots of a Framer page: hide the sticky bottom CTA bar (the record script does this).
+- Carousel layout on nxtjob.ai shifts over time; `record_agent.js` now finds the arrow buttons itself. If it says
+  "card not found", check the card's opening words with a quick text probe of the page.
 - Channel logo on the stitch clip (e.g. "EI" on Raj Shamani clips): `stitch.delogo: [[x, y, w, h]]` in the clip's own pixels.
 - Non-9:16 raw video is zoomed to fill, which moves the head up: set `caption_top` (e.g. 250) so captions stay above it.
 - Misheard phrases / split tokens: `phrase_fix: [["heard words", "correct words"]]`.

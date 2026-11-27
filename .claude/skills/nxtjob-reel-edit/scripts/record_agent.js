@@ -20,7 +20,7 @@ const WARP = `(() => {
   window.requestAnimationFrame = cb => oRAF(() => cb(vnow()));
 })();`;
 const RATE = 0.2;
-const NEXT = [377, 523], PREV = [54, 523];   // carousel arrows (CSS px) after scrolling the carousel to y=160
+let NEXT = [377, 523], PREV = [54, 523];   // carousel arrows (CSS px); re-detected on the page below (layout changes)
 (async () => {
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 430, height: 932 }, deviceScaleFactor: 2.5 });
@@ -33,6 +33,13 @@ const NEXT = [377, 523], PREV = [54, 523];   // carousel arrows (CSS px) after s
   const box0 = await first.boundingBox();
   await p.evaluate(dy => window.scrollBy(0, dy), box0.y - 160);
   await p.waitForTimeout(1500);
+  // find the round prev/next arrow buttons (pointer, ~46 px square) at the left / right edge
+  const arrows = await p.evaluate(() => [...document.querySelectorAll('div,button,a')].map(e => { const r = e.getBoundingClientRect();
+      return [r.x + r.width / 2, r.y + r.height / 2, r.width, r.height, getComputedStyle(e).cursor]; })
+    .filter(a => a[2] >= 36 && a[2] <= 64 && Math.abs(a[2] - a[3]) < 4 && a[1] > 0 && a[1] < 932 && a[4] === 'pointer'));
+  const left = arrows.filter(a => a[0] < 120), right = arrows.filter(a => a[0] > 310);
+  if (left.length && right.length) { PREV = [left[0][0], left[0][1]]; NEXT = [right[0][0], right[0][1]]; }
+  console.log('arrows', JSON.stringify({ PREV, NEXT }));
   const card = p.locator(`text=${PROMPT}`).first();
   let found = false;
   for (let i = 0; i < 12; i++) {
