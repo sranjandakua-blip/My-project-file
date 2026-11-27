@@ -4,20 +4,180 @@
   "source_duration": 51.93,
   "transcript": "src_tr.txt",
   "stitch": null,
-  "parts": [{"start": 0, "end": 51.93}],
-  "zoom": [[0, 1.0], [3.0, 1.2], [6.3, 1.2], [6.3, 1.0], [18.74, 1.0], [18.74, 1.12], [25.24, 1.12], [25.24, 1.0], [38.66, 1.0], [38.66, 1.1], [42.3, 1.1], [42.3, 1.0]],
-  "zoom_center": [590, 820],
-  "inserts": [
-    {"name": "hook", "kind": "text", "style": "banner", "lines": ["Skip this video if you're not aiming for", "30–40% more than your last CTC"], "size": 58, "y": 290, "pop": false, "click": false, "start": 0.0, "end": 3.0},
-    {"name": "t1", "kind": "text", "style": "card", "lines": ["CTC + 10%"], "size": 80, "y": 290, "start": 17.40, "end": 18.74, "_words": "you just tell them CTC plus 10%"},
-    {"name": "t2", "kind": "text", "style": "card", "lines": ["+40% more ↑"], "size": 80, "color": [22, 150, 70], "y": 290, "start": 21.78, "end": 23.88, "_words": "they had almost 40% more than what you asked for"},
-    {"name": "logo1", "kind": "image", "file": "assets/nxtjob_logo.png", "card": true, "width": 560, "y": 290, "start": 27.40, "end": 28.56, "_words": "what NxtJob's"},
-    {"name": "ova", "kind": "agent", "file": "rec/agent.mp4", "ss": 2.9, "speed": 1.05, "start": 28.56, "end": 38.58, "_words": "Negotiator agent ... before you're even on that call (FULL demo cycle: 42L/60L -> chat -> revising -> 54L)"},
-    {"name": "logo2", "kind": "image", "file": "assets/nxtjob_logo.png", "card": true, "width": 560, "y": 290, "start": 43.36, "end": 44.62, "_words": "NxtJob also hosts a workshop"}
+  "parts": [
+    {
+      "start": 0,
+      "end": 51.93
+    }
   ],
-  "sfx": {"click": "sfx/2585.mp3", "ping": "sfx/2574.mp3", "ping_at": 51.55},
+  "zoom": [
+    [
+      0,
+      1.0
+    ],
+    [
+      3.0,
+      1.2
+    ],
+    [
+      6.3,
+      1.2
+    ],
+    [
+      6.3,
+      1.0
+    ],
+    [
+      18.74,
+      1.0
+    ],
+    [
+      18.74,
+      1.12
+    ],
+    [
+      25.24,
+      1.12
+    ],
+    [
+      25.24,
+      1.0
+    ],
+    [
+      38.66,
+      1.0
+    ],
+    [
+      38.66,
+      1.1
+    ],
+    [
+      42.3,
+      1.1
+    ],
+    [
+      42.3,
+      1.0
+    ]
+  ],
+  "zoom_center": [
+    590,
+    820
+  ],
+  "inserts": [
+    {
+      "name": "hook",
+      "kind": "text",
+      "style": "banner",
+      "lines": [
+        "Skip this video if you're not aiming for",
+        "30\u201340% more than your last CTC"
+      ],
+      "size": 58,
+      "y": 290,
+      "pop": false,
+      "click": false,
+      "start": 0.0,
+      "end": 3.0
+    },
+    {
+      "name": "t1",
+      "kind": "text",
+      "style": "card",
+      "lines": [
+        "CTC + 10%"
+      ],
+      "size": 80,
+      "y": 290,
+      "start": 17.4,
+      "end": 18.74,
+      "_words": "you just tell them CTC plus 10%"
+    },
+    {
+      "name": "t2",
+      "kind": "text",
+      "style": "card",
+      "lines": [
+        "+40% more \u2191"
+      ],
+      "size": 80,
+      "color": [
+        22,
+        150,
+        70
+      ],
+      "y": 290,
+      "start": 21.78,
+      "end": 23.88,
+      "_words": "they had almost 40% more than what you asked for"
+    },
+    {
+      "name": "logo1",
+      "kind": "image",
+      "file": "assets/nxtjob_logo.png",
+      "card": true,
+      "width": 560,
+      "y": 290,
+      "start": 27.4,
+      "end": 28.56,
+      "_words": "what NxtJob's"
+    },
+    {
+      "name": "ova",
+      "kind": "agent",
+      "file": "rec/agent.mp4",
+      "ss": 2.9,
+      "speed": 1.05,
+      "start": 28.56,
+      "end": 38.58,
+      "_words": "Negotiator agent ... before you're even on that call (FULL demo cycle: 42L/60L -> chat -> revising -> 54L)"
+    },
+    {
+      "name": "logo2",
+      "kind": "image",
+      "file": "assets/nxtjob_logo.png",
+      "card": true,
+      "width": 560,
+      "y": 290,
+      "start": 43.36,
+      "end": 44.62,
+      "_words": "NxtJob also hosts a workshop"
+    }
+  ],
+  "sfx": {
+    "click": "sfx/2585.mp3",
+    "ping": "sfx/2574.mp3",
+    "ping_at": 51.55
+  },
   "tail": 0.8,
   "caption_top": 420,
-  "phrase_fix": [["30 -40 %", "30-40%"], ["40 %", "40%"], ["accounters", "counters"]],
-  "replace": [["NextJob", "NxtJob"], ["Nextjob", "NxtJob"], ["Rs", "rupees"]]
+  "phrase_fix": [
+    [
+      "30 -40 %",
+      "30-40%"
+    ],
+    [
+      "40 %",
+      "40%"
+    ],
+    [
+      "accounters",
+      "counters"
+    ]
+  ],
+  "replace": [
+    [
+      "NextJob",
+      "NxtJob"
+    ],
+    [
+      "Nextjob",
+      "NxtJob"
+    ],
+    [
+      "Rs",
+      "rupees"
+    ]
+  ],
+  "caption_effect": "none"
 }

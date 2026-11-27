@@ -111,7 +111,7 @@ WHITE = (255, 255, 255, 255); INK = (17, 17, 20, 255)
 SHADOW = cfg.get('caption_shadow', [5, 7])   # hard shadow offset (px), no blur
 # client rule: hard shadow OR outline — never both
 EFFECT = cfg.get('caption_effect', 'shadow')
-assert EFFECT in ('shadow', 'outline'), 'caption_effect must be "shadow" or "outline"'
+assert EFFECT in ('shadow', 'outline', 'none'), 'caption_effect must be "shadow", "outline" or "none"'
 OUTLINE = 3 if EFFECT == 'outline' else 0
 def render_yellow(t):
     g = next((g for g in groups if g[0] <= t < g[1]), None)
