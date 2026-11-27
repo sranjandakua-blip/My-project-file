@@ -105,11 +105,37 @@ def grab(file, t, vf):
 
 SRC = cfg['source']
 FILL = f'scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}'
-def base_args():
-    fc = ''.join(f'[0:v]trim={s}:{e},setpts=(PTS-STARTPTS)/{SPEED},fps={FPS},{FILL},setsar=1[v{i}];' for i, (s, e) in enumerate(KEEPS))
-    fc += ''.join(f'[v{i}]' for i in range(len(KEEPS))) + f'concat=n={len(KEEPS)}:v=1:a=0[out]'
-    return ['ffmpeg', '-v', 'error', '-i', SRC, '-filter_complex', fc, '-map', '[out]', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']
-BASE = Stream(base_args, lambda i: grab(SRC, src_at(i / FPS), FILL))
+def _src_fps():
+    r = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'csv=p=0', SRC],
+                       capture_output=True, text=True).stdout.strip()
+    n, d = (r.split('/') + ['1'])[:2]; return float(n) / float(d)
+SRC_FPS = _src_fps()
+
+
+class MappedSource:
+    """Frame-exact base: decode the whole source once (CFR at its own rate) and, for every output frame, take the
+    source frame whose time = src_at(T). No per-piece fps rounding -> no duplicated/dropped frames, no A/V drift."""
+    def __init__(self): self.p = None; self.n = 0; self.last = None
+
+    def get(self, i):
+        k = int(math.floor(src_at(i / FPS) * SRC_FPS + .5))
+        if STILLS: return grab(SRC, k / SRC_FPS, FILL)
+        if self.p is None:
+            self.p = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', SRC, '-vf', f'fps={SRC_FPS},{FILL},setsar=1', '-f', 'rawvideo',
+                                       '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        fs = W * H * 3
+        while self.n <= k:
+            buf = self.p.stdout.read(fs)
+            if len(buf) < fs: break
+            self.n += 1
+            if self.n > k: self.last = np.frombuffer(buf, np.uint8).reshape(H, W, 3).copy()
+        return self.last
+
+    def close(self):
+        if self.p: self.p.kill(); self.p = None
+
+
+BASE = MappedSource()
 
 # ---------------- zoom keys (punch-ins) ----------------
 ZK = sorted([(o(t), z, cy) for t, z, cy in cfg['zooms']])
